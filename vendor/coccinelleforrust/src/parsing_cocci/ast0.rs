@@ -1,0 +1,1222 @@
+// SPDX-License-Identifier: GPL-2.0
+
+use std::collections::HashSet;
+use std::fmt::{Debug, Display};
+use std::hash::{Hash, Hasher};
+
+use crate::commons::info::{Modkind, EDITION};
+use crate::commons::util::collecttree;
+
+use super::visitor_ast0::work_node;
+use itertools::Itertools;
+use ra_ide_db::line_index::{LineCol, LineIndex};
+use ra_parser::SyntaxKind;
+use ra_syntax::{SourceFile, SyntaxElement, SyntaxNode};
+
+pub struct SyntaxErrInfo {
+    pub node_str: String,
+    pub info: String,
+    pub line: u32,
+    pub col: u32,
+}
+
+impl Display for SyntaxErrInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}\n{} at line {} and col {}",
+            self.node_str, self.info, self.line, self.col
+        )
+    }
+}
+
+impl Debug for SyntaxErrInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[DEBUG] {}\n{} at line {} and col {}",
+            self.node_str, self.info, self.line, self.col
+        )
+    }
+}
+
+#[derive(PartialEq, Eq, Debug)]
+pub(crate) enum SnodeMutRef<'a> {
+    Snode(&'a mut Snode),
+    Disj(usize, Vec<Vec<SnodeMutRef<'a>>>),
+    //Disj node, branches
+}
+
+// impl Clone for SnodeMutRef<'_> {
+//     fn clone(&self) -> Self {
+//         match self {
+//             Self::Snode(arg0) => Self::Snode(*arg0),
+//             Self::Disj(arg0) => Self::Disj(*arg0),
+//         }
+//     }
+// }
+
+impl<'a> SnodeMutRef<'a> {
+    pub fn is_disj(&self) -> bool {
+        match self {
+            SnodeMutRef::Snode(_) => false,
+            SnodeMutRef::Disj(_, _) => true,
+        }
+    }
+
+    pub fn get_snode(self) -> Option<&'a mut Snode> {
+        match self {
+            SnodeMutRef::Snode(snode) => return Some(snode),
+            SnodeMutRef::Disj(_, _) => None,
+        }
+    }
+
+    pub fn get_snode_ref(&self) -> Option<&&'a mut Snode> {
+        match self {
+            SnodeMutRef::Snode(snode) => return Some(snode),
+            SnodeMutRef::Disj(_, _) => None,
+        }
+    }
+
+    pub fn get_disj(self) -> Option<Vec<Vec<SnodeMutRef<'a>>>> {
+        match self {
+            SnodeMutRef::Snode(_) => None,
+            SnodeMutRef::Disj(_, children) => Some(children),
+        }
+    }
+
+    pub fn get_disj_id(&self) -> Option<usize> {
+        match self {
+            SnodeMutRef::Snode(_) => None,
+            SnodeMutRef::Disj(id, _) => Some(*id),
+        }
+    }
+
+    pub fn get_mcodekind(&self) -> Mcodekind {
+        match self {
+            SnodeMutRef::Snode(snode) => snode.wrapper.mcodekind.clone(),
+            SnodeMutRef::Disj(_, _) => Mcodekind::Context(vec![], vec![]), //imp this is assumed in tagpllus
+        }
+    }
+
+    // pub fn get_last_elem_mut(self) -> &'a mut Snode {
+    //     match self {
+    //         SnodeMutRef::Snode(snode) => snode,
+    //         SnodeMutRef::Disj(mut children) => children.remove(children.len() - 1).get_last_elem_mut(),
+    //     }
+    // }
+}
+
+#[derive(PartialEq, Eq, Clone)]
+/// Semantic Path Node
+pub struct Snode {
+    pub wrapper: Wrap,
+    pub is_dots: bool,
+    pub is_fake: bool,
+    pub is_disj: bool,
+    pub asttoken: Option<SyntaxElement>,
+    pub kind: Vec<SyntaxKind>,
+    pub children: Vec<Snode>,
+}
+
+impl PartialOrd for Snode {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.getstring().partial_cmp(&other.getstring())
+    }
+}
+
+impl Ord for Snode {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.getstring().cmp(&other.getstring())
+    }
+}
+
+impl Hash for Snode {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.wrapper.info.pos_info.cstart.hash(state);
+        self.wrapper.info.pos_info.cend.hash(state);
+    }
+}
+
+pub type Pluses = (Vec<Snode>, Vec<Snode>);
+
+impl Debug for Snode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{:?}", self.getstring(), self.kinds())
+    }
+}
+
+impl<'a> Snode {
+    pub fn get_offset(&self) -> usize {
+        return self.wrapper.info.pos_info.offset;
+    }
+
+    pub fn attach_wspaces_back(&mut self, wspaces: String) {
+        fn aux(node: &mut Snode, wspaces: String) {
+            if node.children.len() == 0 {
+                node.wrapper.wspaces_before = wspaces;
+            } else {
+                aux(&mut node.children[0], wspaces)
+            }
+        }
+
+        aux(self, wspaces);
+    }
+
+    pub fn into_preorder<'b>(&'b self) -> Vec<&'b Snode> {
+        fn aux<'c>(snode: &'c Snode) -> Vec<&'c Snode> {
+            if snode.children.is_empty() || !snode.wrapper.metavar.isnotmeta() {
+                return vec![snode];
+            } else {
+                snode.children.iter().flat_map(|x| aux(x)).collect_vec()
+            }
+        }
+
+        aux(self)
+    }
+
+    pub(crate) fn into_preorder_mut<'b>(&'b mut self) -> Vec<SnodeMutRef<'b>> {
+        fn aux<'c>(snode: &'c mut Snode) -> Vec<SnodeMutRef<'c>> {
+            if !snode.is_dots && !snode.is_fake && !snode.is_disj && snode.has_kind(&SyntaxKind::COMMENT) {
+                //checking for filler //**** comments
+                return vec![];
+            } else if snode.children.is_empty() || !snode.wrapper.metavar.isnotmeta() {
+                return vec![SnodeMutRef::Snode(snode)];
+            } else if snode.is_disj {
+                let children = snode
+                    .children
+                    .iter_mut()
+                    .map(|x: &'c mut Snode| aux(x))
+                    .collect_vec();
+                return vec![SnodeMutRef::Disj(snode.wrapper.disj_id.unwrap(), children)];
+            } else {
+                snode.children.iter_mut().flat_map(|x| aux(x)).collect_vec()
+            }
+        }
+
+        aux(self)
+    }
+
+    /// Fake is used in two cases
+    /// 1. For denoting the of ... in case nothing follows after the ...
+    /// 2. To denote the parent of a branch in a disjunction
+    pub fn make_fake() -> Snode {
+        Snode {
+            wrapper: Wrap::make_dummy(),
+            is_dots: false,
+            is_fake: true,
+            is_disj: false,
+            asttoken: None,
+            kind: vec![SyntaxKind::COMMENT], //No meaning
+            children: vec![],
+        }
+    }
+
+    pub fn clone_without_children(&self) -> Snode {
+        return Snode {
+            wrapper: self.wrapper.clone(),
+            is_dots: self.is_dots,
+            is_fake: self.is_fake,
+            is_disj: self.is_disj,
+            asttoken: self.asttoken.clone(),
+            kind: self.kind.clone(),
+            children: vec![],
+        };
+    }
+
+    pub fn make_disj(branches: Vec<Snode>) -> Snode {
+        return Snode {
+            wrapper: Wrap::make_dummy(),
+            is_dots: false,
+            is_fake: false,
+            is_disj: true,
+            asttoken: None,
+            kind: vec![SyntaxKind::MACRO_CALL], //dummy
+            children: branches,
+        };
+    }
+
+    pub fn make_dots(mcodekind: Mcodekind) -> Snode {
+        let mut snode = Snode {
+            wrapper: Wrap::make_dummy(),
+            is_dots: true,
+            is_fake: false,
+            is_disj: false,
+            asttoken: None,
+            kind: vec![SyntaxKind::COMMENT], //No meaning
+            children: vec![],
+        };
+
+        match mcodekind {
+            Mcodekind::Minus(_) => {
+                snode.wrapper.is_modded = true;
+            }
+            Mcodekind::Context(_, _) => {}
+            _ => {
+                panic!("Not possible")
+            }
+        }
+        snode.wrapper.mcodekind = mcodekind;
+
+        snode
+    }
+
+    pub fn set_children(&mut self, children: Vec<Snode>) {
+        self.children = children
+    }
+
+    pub fn tonode(self) -> SyntaxNode {
+        self.asttoken.unwrap().into_node().unwrap()
+    }
+
+    pub fn totoken(&self) -> String {
+        //panics is element is node
+        self.asttoken.as_ref().unwrap().to_string()
+    }
+
+    pub fn totokenrec(&self) -> &str {
+        fn aux(node: &Snode) -> &str {
+            if node.children.len() == 0 {
+                return node.asttoken.as_ref().unwrap().as_token().unwrap().text();
+            } else {
+                return aux(&node.children[0]);
+            }
+        }
+
+        return aux(self);
+    }
+
+    pub fn kinds(&'a self) -> &'a Vec<SyntaxKind> {
+        &self.kind
+    }
+
+    pub fn has_kind(&self, kind: &SyntaxKind) -> bool {
+        self.kind.contains(kind)
+    }
+
+    pub fn getstring_with_format(&self) -> String {
+        if self.children.len() == 0 {
+            if self.asttoken.is_none() {
+                return String::new();
+            }
+            if self.wrapper.mcodekind.is_minus() {
+                return format!("\x1b[31m{}\x1b[0m", self.totoken());
+            }
+            return self.totoken();
+        } else if self.is_disj {
+            let mut st = format!("\x1b[93m( \x1b[0m");
+            for child in &self.children {
+                st.push_str(&&child.getstring_with_format());
+                st.push_str("\x1b[93m | \x1b[0m");
+            }
+            st = st[0..st.len() - 12].to_string();
+            st.push_str("\x1b[93m )\x1b[0m");
+            return st;
+        } else if self.children.len() == 1 {
+            return String::from(self.children[0].getstring_with_format());
+        } else {
+            let mut tokens: String = String::new();
+
+            for i in &self.children {
+                tokens = format!("{} {}", tokens, i.getstring_with_format());
+            }
+            return String::from(tokens.trim());
+        }
+    }
+
+    pub fn getstring(&self) -> String {
+        if self.children.len() == 0 {
+            if self.asttoken.is_none() {
+                return String::new();
+            }
+            return self.totoken();
+        } else if self.is_disj {
+            let mut st = format!("\x1b[93m( \x1b[0m");
+            for child in &self.children {
+                st.push_str(&child.getstring());
+                st.push_str("\x1b[93m | \x1b[0m");
+            }
+            st = st[0..st.len() - 7].to_string();
+            st.push_str("\x1b[93m )\x1b[0m");
+            return st;
+        } else if self.children.len() == 1 {
+            return String::from(self.children[0].getstring());
+        } else if self.is_dots {
+            return format!(
+                "{} DOTS {}",
+                self.children[0].getstring(),
+                self.children[1].getstring()
+            );
+        } else {
+            let mut tokens: String = String::new();
+
+            for i in &self.children {
+                tokens = format!("{} {}", tokens, i.getstring());
+            }
+            return String::from(tokens.trim());
+        }
+    }
+
+    fn print_tree_kind_aux(&self, pref: &String) {
+        if self.is_disj {
+            eprintln!(
+                "{}{}, {:?}: {:?} WS-{:?}",
+                pref,
+                "DISJUNCTION",
+                self.wrapper.mcodekind,
+                self.wrapper.metavar,
+                self.wrapper.wspaces_before
+            );
+        } else if self.is_dots {
+            eprintln!(
+                "{}DOTS, {:?}: {:?} WS-{:?}",
+                pref, self.wrapper.mcodekind, self.wrapper.metavar, self.wrapper.wspaces_before
+            );
+        } else if self.is_fake {
+            eprintln!(
+                "{}FAKE, {:?}: {:?} WS-{:?}",
+                pref, self.wrapper.mcodekind, self.wrapper.metavar, self.wrapper.wspaces_before
+            );
+        } else {
+            eprintln!(
+                "{}{:?}, {:?}: {:?} WS-{:?}",
+                pref,
+                self.kinds(),
+                self.wrapper.mcodekind,
+                self.wrapper.metavar,
+                self.wrapper.wspaces_before
+            );
+        }
+
+        let mut newbuf = String::from(pref);
+        newbuf.push_str(&String::from("--"));
+        for child in &self.children {
+            child.print_tree_kind_aux(&newbuf)
+        }
+    }
+
+    pub fn print_tree_kinds(&self) {
+        //stticly debug function
+        self.print_tree_kind_aux(&String::from("--"));
+    }
+
+    pub fn istype(&self) -> bool {
+        use SyntaxKind::*;
+        let c = |a: &SyntaxKind| match a {
+            ARRAY_TYPE | DYN_TRAIT_TYPE | FN_PTR_TYPE | FOR_TYPE | IMPL_TRAIT_TYPE | INFER_TYPE
+            | MACRO_TYPE | NEVER_TYPE | PAREN_TYPE | PATH_TYPE | PTR_TYPE | REF_TYPE | SLICE_TYPE
+            | TUPLE_TYPE => true,
+            _ => false,
+        };
+
+        self.kinds().iter().any(c)
+    }
+
+    pub fn islifetime(&self) -> bool {
+        //NOTE: TYPE_ARG is used because we use the lifetime metavariables
+        //may not have a '(quote) so for the semantic patch A<a, b>, a and b
+        //can be lifetimes if defined so in the metavar declaration
+        let c = |c: &SyntaxKind| match c {
+            SyntaxKind::LIFETIME_ARG | SyntaxKind::TYPE_ARG => true,
+            _ => false,
+        };
+
+        self.kinds().iter().any(c)
+    }
+    pub fn isparam(&self) -> bool {
+        let c = |c: &SyntaxKind| match c {
+            SyntaxKind::PARAM | SyntaxKind::SELF_PARAM => true,
+            _ => false,
+        };
+
+        self.kinds().iter().any(c)
+    }
+
+    pub fn isid(&self) -> bool {
+        use SyntaxKind::*;
+        self.kinds()
+            .iter()
+            .any(|c| return *c == PATH || *c == NAME || *c == NAME_REF)
+            || self.ispat()
+    }
+
+    pub fn ispat(&self) -> bool {
+        use SyntaxKind::*;
+        let c = |c: &SyntaxKind| match c {
+            IDENT_PAT | BOX_PAT | REST_PAT | LITERAL_PAT | MACRO_PAT | OR_PAT | PAREN_PAT | PATH_PAT
+            | WILDCARD_PAT | RANGE_PAT | RECORD_PAT | REF_PAT | SLICE_PAT | TUPLE_PAT | TUPLE_STRUCT_PAT
+            | CONST_BLOCK_PAT => true,
+            _ => false,
+        };
+
+        self.kinds().iter().any(c)
+    }
+
+    pub fn isitem(&self) -> bool {
+        use SyntaxKind::*;
+
+        let c = |c: &SyntaxKind| match c {
+            CONST | ENUM | EXTERN_BLOCK | EXTERN_CRATE | FN | IMPL | MACRO_CALL | MACRO_RULES | MACRO_DEF
+            | MODULE | STATIC | STRUCT | TRAIT | TRAIT_ALIAS | TYPE_ALIAS | UNION | USE => true,
+            _ => false,
+        };
+
+        self.kinds().iter().any(c)
+    }
+
+    pub fn isexpr(&self) -> bool {
+        use SyntaxKind::*;
+
+        let c = |c: &SyntaxKind| match c {
+            TUPLE_EXPR
+            | ARRAY_EXPR
+            | PAREN_EXPR
+            | PATH_EXPR
+            | CLOSURE_EXPR
+            | IF_EXPR
+            | WHILE_EXPR
+            | LOOP_EXPR
+            | FOR_EXPR
+            | CONTINUE_EXPR
+            | BREAK_EXPR
+            | RETURN_EXPR
+            | YIELD_EXPR
+            | LET_EXPR
+            | UNDERSCORE_EXPR
+            | MACRO_EXPR
+            | MATCH_EXPR
+            | RECORD_EXPR
+            | RECORD_EXPR_FIELD_LIST
+            | RECORD_EXPR_FIELD
+            | CALL_EXPR
+            | INDEX_EXPR
+            | METHOD_CALL_EXPR
+            | FIELD_EXPR
+            | AWAIT_EXPR
+            | TRY_EXPR
+            | CAST_EXPR
+            | REF_EXPR
+            | PREFIX_EXPR
+            | RANGE_EXPR
+            | BIN_EXPR
+            | EXPR_STMT
+            | LITERAL
+            | NAME_REF => true,
+            _ => false,
+        };
+
+        self.kinds().iter().any(c)
+    }
+
+    pub fn is_keyword(&self) -> bool {
+        self.kinds().iter().any(|c| c.is_keyword(EDITION))
+    }
+
+    pub fn getdisjs(&'a self) -> (Vec<&'a Snode>, Pluses) {
+        if !self.wrapper.isdisj {
+            return (vec![], (vec![], vec![]));
+        }
+        fn collectdisjs<'b>(node: &'b Snode) -> Vec<&'b Snode> {
+            //this function also returns the plus at the end of a disjunction
+            let mut disjs: Vec<&Snode> = vec![];
+            if node.wrapper.isdisj {
+                disjs.push(&node.children[2].children[0]); //stmtlist is pushed
+                match &node.children[..] {
+                    [_ifkw, _cond, _block, _elsekw, ifblock] => {
+                        disjs.append(&mut collectdisjs(ifblock));
+                    }
+                    _ => {}
+                }
+            }
+            return disjs;
+        }
+        let disjs = collectdisjs(&self);
+        return (disjs, self.wrapper.mcodekind.getpluses());
+    }
+
+    pub fn get_constants(&self) -> Vec<String> {
+        let mut constants: HashSet<String> = HashSet::new();
+
+        let mut f = |node: &Snode| {
+            if node.is_keyword() {
+                constants.insert(node.totoken());
+            }
+        };
+
+        collecttree(self, &mut f);
+
+        constants.into_iter().collect_vec()
+    }
+
+    pub fn get_pluses(&self) -> Pluses {
+        match &self.wrapper.mcodekind {
+            Mcodekind::Minus(pluses) => (pluses.clone(), vec![]),
+            Mcodekind::Plus => (vec![], vec![]),
+            Mcodekind::Context(p1, p2) => (p1.clone(), p2.clone()),
+            Mcodekind::Star => todo!(),
+        }
+    }
+
+    pub fn get_pos(&self) -> (usize, usize) {
+        return self.wrapper.info.get_pos_tuple();
+    }
+
+    pub fn change_kinds(&mut self, kinds: &[SyntaxKind]) {
+        self.kind = kinds.to_vec();
+    }
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct MetavarName {
+    pub rulename: String,
+    pub varname: String,
+}
+
+impl MetavarName {
+    pub fn create_v() -> MetavarName {
+        MetavarName {
+            rulename: String::from(""),
+            varname: String::from("_v"),
+        }
+    }
+
+    pub fn is_v(&self) -> bool {
+        self.rulename == "NONE" && self.varname == "_v"
+    }
+
+    pub fn new(name: String) -> MetavarName {
+        MetavarName {
+            rulename: String::new(),
+            varname: name,
+        }
+    }
+}
+
+impl Display for MetavarName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.rulename.is_empty() {
+            write!(f, "{}", self.varname)
+        } else {
+            write!(f, "{}.{}", self.rulename, self.varname)
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct Dummy {}
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum MODKIND {
+    PLUS,
+    MINUS,
+    STAR,
+}
+
+// #[derive(Clone, PartialEq)]
+// pub struct TokenInfo {
+//     tline_start: usize,
+//     tline_end: usize,
+//     left_offset: usize,
+//     right_offset: usize,
+// }
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct PositionInfo {
+    pub line_start: usize,
+    pub line_end: usize,
+    pub logical_start: usize,
+    pub logical_end: usize,
+
+    pub column: usize,
+    pub cstart: usize,
+    pub cend: usize,
+    pub offset: usize,
+}
+
+impl PositionInfo {
+    pub fn new(
+        line_start: usize,
+        line_end: usize,
+        logical_start: usize,
+        logical_end: usize,
+        column: usize,
+        cstart: usize,
+        cend: usize,
+        offset: usize,
+    ) -> PositionInfo {
+        PositionInfo {
+            line_start: line_start,
+            line_end: line_end,
+            logical_start: logical_start,
+            logical_end: logical_end,
+            column: column,
+            cstart: cstart,
+            cend: cend,
+            offset: offset,
+        }
+    }
+
+    pub fn subtract(&mut self, info: Self) {
+        self.line_start -= info.line_start;
+        self.line_end -= info.line_start;
+    }
+
+    pub fn add(&mut self, info: Self) {
+        self.line_start += info.line_start;
+        self.line_end += info.line_start;
+    }
+}
+
+#[derive(PartialEq, Eq, Clone)]
+pub struct Info {
+    pub pos_info: PositionInfo,
+    attachable_start: bool,
+    attachable_end: bool,
+    strings_before: Vec<(Dummy, PositionInfo)>,
+    strings_after: Vec<(Dummy, PositionInfo)>,
+    is_symbol_ident: bool,
+}
+
+impl Info {
+    pub fn new(
+        pos_info: PositionInfo,
+        attachable_start: bool,
+        attachable_end: bool,
+        strings_before: Vec<(Dummy, PositionInfo)>,
+        strings_after: Vec<(Dummy, PositionInfo)>,
+        is_symbol_ident: bool,
+    ) -> Info {
+        Info {
+            pos_info: pos_info,
+            attachable_start: attachable_start,
+            attachable_end: attachable_end,
+            strings_before: strings_before,
+            strings_after: strings_after,
+            is_symbol_ident,
+        }
+    }
+
+    pub fn get_pos_tuple(&self) -> (usize, usize) {
+        let pinfo = &self.pos_info;
+        (pinfo.cstart, pinfo.cend)
+    }
+}
+
+// NOT USED
+#[derive(Clone, Hash, Debug, PartialEq, Eq)]
+pub enum KeepBinding {
+    UNITARY,    //Need no info
+    NONUNITARY, //Need an env entry
+    SAVED,      //Need a witness
+}
+
+type Minfo = (MetavarName, KeepBinding, bool); //rulename, metavar name, keepbinding, is_inherited
+
+#[derive(Clone, Hash, Debug, PartialEq, Eq)]
+pub enum Mcodekind {
+    Minus(Vec<Snode>), //Argument is the replacement
+    Plus,
+    Context(Vec<Snode>, Vec<Snode>), //pluses before and after context
+    Star,
+}
+
+impl<'a> Mcodekind {
+    pub fn to_modkind(&self) -> Modkind {
+        match self {
+            Mcodekind::Minus(_) => Modkind::Minus,
+            Mcodekind::Plus => Modkind::Plus,
+            Mcodekind::Context(_, _) => Modkind::Context,
+            Mcodekind::Star => Modkind::Star,
+        }
+    }
+
+    pub fn is_context(&self) -> bool {
+        match self {
+            Mcodekind::Context(_, _) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_minus(&self) -> bool {
+        match self {
+            Mcodekind::Minus(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn has_pluses(&self) -> bool {
+        match self {
+            Mcodekind::Minus(a) if !a.is_empty() => true,
+            Mcodekind::Context(a, b) if !a.is_empty() || !b.is_empty() => true,
+            _ => false,
+        }
+    }
+
+    pub fn get_plusesbef_ref_mut(&'a mut self) -> &'a mut Vec<Snode> {
+        match self {
+            Mcodekind::Context(a, _) => a,
+            Mcodekind::Minus(a) => a,
+            _ => panic!("No pluses should be attached to Plus or star nodes"),
+        }
+    }
+
+    pub fn get_plusesaft_ref_mut(&'a mut self) -> &'a mut Vec<Snode> {
+        match self {
+            Mcodekind::Context(_, a) => a,
+            Mcodekind::Minus(a) => a,
+            _ => panic!("No pluses should be attached to Plus or star nodes"),
+        }
+    }
+
+    pub fn get_plusesbef_ref(&'a self) -> &'a Vec<Snode> {
+        match self {
+            Mcodekind::Context(a, _) => &a,
+            Mcodekind::Minus(a) => &a,
+            _ => panic!("No pluses should be attached to Plus or star nodes"),
+        }
+    }
+
+    pub fn get_plusesaft_ref(&'a self) -> &'a Vec<Snode> {
+        match self {
+            Mcodekind::Context(_, a) => &a,
+            Mcodekind::Minus(a) => &a,
+            _ => panic!("No pluses should be attached to Plus or star nodes"),
+        }
+    }
+
+    //Warning: Clones plussed nodes
+    pub fn getpluses(&self) -> (Vec<Snode>, Vec<Snode>) {
+        match self {
+            Mcodekind::Context(a, b) => (a.clone(), b.clone()),
+            Mcodekind::Minus(a) => (a.clone(), vec![]),
+            _ => panic!("No pluses should be attached to Plus or star nodes"),
+        }
+    }
+
+    pub fn push_pluses_front(&mut self, mut pluses: Vec<Snode>) {
+        match self {
+            Mcodekind::Context(a, _) => {
+                pluses.append(a);
+                *a = pluses;
+            }
+            Mcodekind::Minus(a) => {
+                pluses.append(a);
+                *a = pluses;
+            }
+            _ => {
+                panic!("Cannot attach plus to Plus or Star nodes");
+            }
+        }
+    }
+
+    //This function is only invoked on a disjunction node
+    pub fn push_pluses_back(&mut self, pluses: Vec<Snode>) {
+        match self {
+            Mcodekind::Context(_, a) => {
+                a.extend(pluses);
+            }
+            Mcodekind::Minus(a) => a.extend(pluses),
+            _ => {
+                panic!("Cannot attach plus to Plus or Star nodes");
+            }
+        }
+    }
+}
+
+#[derive(Clone, Hash, Debug, Eq)]
+pub enum MetaVar {
+    NoMeta,
+    Exp(Minfo),
+    Id(Minfo),
+    Type(Minfo),
+    Lifetime(Minfo),
+    Parameter(Minfo),
+
+    Adt(String, Minfo), //typename, minfo
+                        //Adt stands for A DataType as used in RA for
+                        //Struct, enum and union
+                        //I have not yet added primtiive support
+                        //But it should not be hard
+}
+
+impl MetaVar {
+    pub fn getname(&self) -> &str {
+        match self {
+            Self::NoMeta => {
+                panic!("Should never happen");
+            }
+            Self::Id(minfo)
+            | Self::Exp(minfo)
+            | Self::Lifetime(minfo)
+            | Self::Type(minfo)
+            | Self::Parameter(minfo)
+            | Self::Adt(_, minfo) => minfo.0.varname.as_str(),
+        }
+    }
+
+    pub fn gettype(&self) -> &str {
+        match self {
+            Self::NoMeta => "None",
+            Self::Id(_minfo) => "identifier",
+            Self::Exp(_minfo) => "expression",
+            Self::Lifetime(_minfo) => "lifetime",
+            Self::Type(_minfo) => "type",
+            Self::Parameter(_minfo) => "parameter",
+            Self::Adt(_, _minfo) => "adt",
+        }
+    }
+
+    pub fn setbinding(&mut self, binding: KeepBinding) {
+        match self {
+            Self::NoMeta => {
+                panic!("Should not occur.");
+            }
+            Self::Exp(minfo)
+            | Self::Id(minfo)
+            | Self::Type(minfo)
+            | Self::Lifetime(minfo)
+            | Self::Parameter(minfo) => {
+                minfo.1 = binding;
+            }
+            Self::Adt(_, minfo) => {
+                minfo.1 = binding;
+            }
+        }
+    }
+
+    pub fn getminfo(&self) -> &Minfo {
+        match self {
+            Self::NoMeta => {
+                panic!("Should not occur.");
+            }
+            Self::Exp(minfo)
+            | Self::Id(minfo)
+            | Self::Type(minfo)
+            | Self::Lifetime(minfo)
+            | Self::Parameter(minfo) => &minfo,
+            Self::Adt(_, minfo) => &minfo,
+        }
+    }
+
+    pub fn getrulename(&self) -> &str {
+        match self {
+            Self::NoMeta => {
+                panic!("Should not occur.");
+            }
+            Self::Exp(minfo)
+            | Self::Id(minfo)
+            | Self::Type(minfo)
+            | Self::Lifetime(minfo)
+            | Self::Parameter(minfo) => &minfo.0.rulename.as_str(),
+            Self::Adt(_, minfo) => &minfo.0.rulename.as_str(),
+        }
+    }
+
+    pub fn new(rulename: &str, name: &str, ty: &MetavarType, isinherited: bool) -> MetaVar {
+        let minfo = (
+            MetavarName {
+                rulename: rulename.to_string(),
+                varname: name.to_string(),
+            },
+            KeepBinding::UNITARY,
+            isinherited,
+        );
+        match ty {
+            MetavarType::Expression => Self::Exp(minfo),
+            MetavarType::Identifier => Self::Id(minfo),
+            MetavarType::Type => Self::Type(minfo),
+            MetavarType::Lifetime => Self::Lifetime(minfo),
+            MetavarType::Parameter => Self::Parameter(minfo),
+            MetavarType::Adt(tyname) => Self::Adt(tyname.clone(), minfo),
+        }
+    }
+
+    pub fn isnotmeta(&self) -> bool {
+        match self {
+            MetaVar::NoMeta => true,
+            _ => false,
+        }
+    }
+
+    pub fn ismeta(&self) -> bool {
+        match self {
+            MetaVar::NoMeta => false,
+            _ => true,
+        }
+    }
+
+    pub fn makeinherited(&self) -> MetaVar {
+        let mut inhertited = self.clone();
+        match &mut inhertited {
+            MetaVar::NoMeta => {}
+            MetaVar::Exp(minfo)
+            | MetaVar::Id(minfo)
+            | MetaVar::Type(minfo)
+            | MetaVar::Lifetime(minfo)
+            | MetaVar::Parameter(minfo) => {
+                minfo.2 = true;
+            }
+            MetaVar::Adt(_, minfo) => {
+                minfo.2 = true;
+            }
+        }
+
+        return inhertited;
+    }
+
+    pub fn isinherited(&self) -> bool {
+        match self {
+            MetaVar::NoMeta => false,
+            MetaVar::Exp(minfo)
+            | MetaVar::Id(minfo)
+            | MetaVar::Type(minfo)
+            | MetaVar::Lifetime(minfo)
+            | MetaVar::Parameter(minfo) => minfo.2,
+            MetaVar::Adt(_, minfo) => minfo.2,
+        }
+    }
+}
+
+impl PartialEq for MetaVar {
+    fn eq(&self, other: &Self) -> bool {
+        if self.isnotmeta() && other.isnotmeta() {
+            return true;
+        } else if self.isnotmeta() ^ other.isnotmeta() {
+            return false;
+        }
+        self.getname() == other.getname() && self.getrulename() == other.getrulename()
+    }
+}
+
+#[derive(Debug)]
+pub enum MetavarType {
+    Expression,
+    Identifier,
+    Type,
+    Lifetime,
+    Parameter,
+    Adt(String),
+}
+
+impl MetavarType {
+    pub fn build(ty: &str) -> MetavarType {
+        //VERY IMP
+        //this match should have a string for each MetavarType variant
+        match ty {
+            //TODO add spellchecks
+            //It is common to misspell one of these
+            //And then it will be treated as a type
+            "expression" => MetavarType::Expression,
+            "identifier" => MetavarType::Identifier,
+            "type" => MetavarType::Type,
+            "lifetime" => MetavarType::Lifetime,
+            "parameter" => MetavarType::Parameter,
+            datatype => MetavarType::Adt(datatype.to_string()),
+        }
+    }
+
+    pub fn is_adt(&self) -> bool {
+        match self {
+            Self::Adt(_) => true,
+            _ => false,
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Clone)]
+pub struct Wrap {
+    pub info: Info,
+    index: usize,
+    exp_ty: Option<String>,
+    pub metavar: MetaVar,
+    true_if_arg: bool,
+    pub true_if_test: bool,
+    pub true_if_test_exp: bool,
+    pub disj_id: Option<usize>,
+    iso_info: Vec<(String, Dummy)>,
+    pub isdisj: bool,         //deprecated
+    pub mcodekind: Mcodekind, //McodeKind contains the plusses if any
+    pub is_modded: bool,
+    pub freevars: Vec<MetaVar>,
+    pub wspaces_before: String,
+}
+
+impl Wrap {
+    pub fn new(
+        info: Info,
+        index: usize,
+        exp_ty: Option<String>,
+        metavar: MetaVar,
+        true_if_arg: bool,
+        true_if_test: bool,
+        true_if_test_exp: bool,
+        iso_info: Vec<(String, Dummy)>,
+        isdisj: bool,
+    ) -> Wrap {
+        Wrap {
+            info: info,
+            index: index,
+            exp_ty: exp_ty,
+            metavar: metavar,
+            true_if_arg: true_if_arg,
+            disj_id: None,
+            true_if_test: true_if_test,
+            true_if_test_exp: true_if_test_exp,
+            iso_info: iso_info,
+            isdisj: isdisj,
+            mcodekind: Mcodekind::Context(vec![], vec![]), //All tokens start out as context
+            //before being modified accordingly
+            is_modded: false,
+            freevars: vec![],
+            wspaces_before: String::new(),
+        }
+    }
+
+    pub fn make_dummy() -> Wrap {
+        let pos_info: PositionInfo = PositionInfo::new(
+            //all casted to usize because linecol returns u32
+            0, 0, 0, 0, 0, 0, 0, 0,
+        );
+
+        let info = Info::new(pos_info, false, false, vec![], vec![], false);
+        let wrap: Wrap = Wrap::new(
+            info,
+            0,
+            None, //will be filled later with type inference
+            MetaVar::NoMeta,
+            false,
+            false,
+            false,
+            vec![],
+            false,
+        );
+        wrap
+    }
+
+    pub fn is_ident(&self) -> bool {
+        self.info.is_symbol_ident
+    }
+
+    pub fn getlinenos(&self) -> (usize, usize) {
+        (self.info.pos_info.line_start, self.info.pos_info.line_end)
+    }
+
+    pub fn set_logilines_start(&mut self, lino: usize) {
+        self.info.pos_info.logical_start = lino;
+    }
+
+    pub fn set_logilines_end(&mut self, lino: usize) {
+        self.info.pos_info.logical_end = lino;
+    }
+
+    pub fn getlogilinenos(&self) -> (usize, usize) {
+        (self.info.pos_info.logical_start, self.info.pos_info.logical_end)
+    }
+
+    pub fn setmodkind(&mut self, modkind: Modkind) {
+        match modkind {
+            Modkind::Plus => {
+                self.is_modded = true;
+                self.mcodekind = Mcodekind::Plus
+            }
+            Modkind::Minus => {
+                self.is_modded = true;
+                self.mcodekind = Mcodekind::Minus(vec![])
+            }
+            Modkind::Star => self.mcodekind = Mcodekind::Star,
+            Modkind::Context => {
+                self.is_modded = false;
+                self.mcodekind = Mcodekind::Context(vec![], vec![])
+            }
+        }
+    }
+
+    pub fn _set_ismodded(&mut self, modkind: Modkind) {
+        match modkind {
+            Modkind::Minus | Modkind::Plus => self.is_modded = true,
+            Modkind::Star | Modkind::Context => self.is_modded = false,
+        }
+    }
+}
+
+pub fn fill_wrap(lindex: &LineIndex, node: &SyntaxElement) -> Wrap {
+    let cstart = node.text_range().start();
+    let cend = node.text_range().end();
+    let sindex: LineCol = lindex.line_col(cstart);
+    let eindex: LineCol = lindex.line_col(cend);
+    let pos_info: PositionInfo = PositionInfo::new(
+        //all casted to usize because linecol returns u32
+        sindex.line as usize,
+        eindex.line as usize,
+        0,
+        0,
+        sindex.col as usize,
+        cstart.into(),
+        cend.into(),
+        node.text_range().start().into(),
+    );
+
+    let info = Info::new(pos_info, false, false, vec![], vec![], false);
+    let wrap: Wrap = Wrap::new(
+        info,
+        0,
+        None, //will be filled later with type inference
+        MetaVar::NoMeta,
+        false,
+        false,
+        false,
+        vec![],
+        false,
+    );
+    wrap
+}
+
+pub fn parsedisjs<'a>(_node: &mut Snode) {
+    //for later
+    todo!()
+}
+
+pub fn wrap_root(contents: &str) -> Result<Snode, Vec<SyntaxErrInfo>> {
+    let lindex = LineIndex::new(contents);
+
+    let parse = SourceFile::parse(contents, EDITION);
+    let errors = parse.errors();
+
+    if !errors.is_empty() {
+        let mut evec = vec![];
+        for error in errors {
+            let lindex = lindex.line_col(error.range().start());
+
+            // To Note:
+            // Skipping the next error is a hack to be able to parse
+            // fn func(param) { ... } as the compiler needs param to have
+            // type specified but the [Rust CFG] https://github.com/rust-lang/rust-analyzer/blob/master/crates/syntax/rust.ungram
+            // for param without type. This is for accomodating the parameter
+            // metavariable in the semantic patch. This will cause problems
+            // when someone actually makes this mistake and param is not a metavar
+            // Have to find a more elegant solution to this
+
+            if error.to_string().contains("missing type for function parameter") {
+                break;
+            }
+            evec.push(SyntaxErrInfo {
+                node_str: parse.syntax_node().to_string(),
+                info: error.to_string(),
+                line: lindex.line,
+                col: lindex.col,
+            });
+        }
+        return Err(evec);
+    }
+
+    let root = SourceFile::parse(contents, EDITION).syntax_node();
+
+    let snode = work_node(
+        &lindex,
+        SyntaxElement::Node(root),
+        Modkind::Context,
+        String::new(),
+    )
+    .0;
+    Ok(snode)
+}

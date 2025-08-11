@@ -1,0 +1,85 @@
+use crate::parsing_cocci::smpl_grammar::*;
+use crate::parsing_cocci::lexer::Token;
+
+grammar<'input>(input: &'input str);
+
+pub SPatch: Vec<RuleType<'input>> = {
+    Rule => vec![<>],
+    <mut s:SPatch> <r:Rule> => {s.push(r); s}
+}
+
+Rule: RuleType<'input> = {
+    AT <r:WORD> AT <h:Header> AT <lno:AT> => (r, h, (None, vec![]), false, lno+1),
+    AT <r:WORD> AT <h:Header> AT <lno:AT> <d:Glob> => (r, h, (None, d), false, lno+1),
+    AT AT <h:Header> AT <lno:AT> => ("", h, (None, vec![]), false, lno+1),
+    AT AT <h:Header> AT <lno:AT> <d:Glob> => ("", h, (None, d), false, lno+1),
+
+    AT <r:WORD> AT AT <lno:AT> => (r, vec![], (None, vec![]), false, lno+1),
+    AT <r:WORD> AT AT <lno:AT> <d:Glob> => (r, vec![], (None, d), false, lno+1),
+    AT AT AT <lno:AT> => ("", vec![], (None, vec![]), false, lno+1),
+    AT AT AT <lno:AT> <d:Glob> => ("", vec![], (None, d), false, lno+1),
+}
+
+Header = {
+    MetavarDecls
+}
+
+MetavarDecls: Vec<Metavar<'input>> = {
+    <t:MetavarType> <def:MetavarDef> SEMICOLON => vec![make_metavar(t, def)],
+    <decls:MetavarDecls> <mty: MetavarType> <def:MetavarDef> SEMICOLON => add_metavar(decls, mty, def)
+}
+
+MetavarType: &'input str = {
+    WORD => <>.trim()
+}
+
+MetavarDef: Vec<&'input str> = {
+    WORD => vec![<>],
+    <mut defs:MetavarDef> COMMA <ident:WORD> => { defs.push(ident); defs }
+}
+
+DisjBranches: Vec<DisjBranch> = {
+    <d1: Glob> PIPE <d2:Glob> => vec![(None, d1), (None, d2)],
+    <mut d:DisjBranches> PIPE <m:Glob> => {d.push((None, m)); d}
+}
+
+Disji: DisjElem = {
+    DISJ_LPAREN <db:DisjBranches> DISJ_RPAREN => DisjElem::Disj(None, db),
+}
+
+Glob: Vec<DisjElem> = {
+    Disji => vec![<>],
+    Mods => vec![ DisjElem::Mod(<>) ],
+    <m: Mods> <disj: Disji> => vec![DisjElem::Mod(m), disj],
+    <m:Mods> <disj:Disji> <g:Glob> => { let mut tmp = vec![DisjElem::Mod(m), disj]; tmp.extend(g); tmp },
+    <disj:Disji> <mut g:Glob> => { g.insert(0, disj); g }
+}
+
+Mods: ModType = {
+    CODE => (<>.to_string(), vec![]),
+    <pre: CODE> DOTS <mut post:Mods> => {
+        let tmp = pre.to_string();
+        post.0.insert_str(0, &format!("{} ", pre));
+        post.1.insert(0, 0);
+        post.1.iter_mut().for_each(|x| *x = *x + pre.len());
+        post
+    },
+}
+
+
+extern {
+    type Location = (usize, usize);
+    type Error = String;
+
+    enum Token<'input> {
+        AT => Token::AT(<usize>),
+        SEMICOLON => Token::SEMICOLON,
+        COMMA => Token::COMMA,
+        DISJ_LPAREN => Token::DISJLparen,
+        DISJ_RPAREN => Token::DISJRparen,
+        PIPE => Token::PIPE,
+        DOTS => Token::DOTS,
+        CODE => Token::CODE(<&'input str>),
+        WORD => Token::WORD(<&'input str>)
+    }
+}
