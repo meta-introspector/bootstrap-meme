@@ -15,3 +15,4 @@ name = "model-builder-quiz"
 path = "src/main.rs"
 
 [workspace]
+members = ["emojitape_interpreter"]

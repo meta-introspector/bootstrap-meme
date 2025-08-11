@@ -1,0 +1,8 @@
+[package]
+name = "emojitape_interpreter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+regex = "1.7" # For parsing rules and tokens
+lazy_static = "1.4" # For static regexes
