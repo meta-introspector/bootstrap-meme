@@ -1,9 +1,9 @@
 // src/ooda_loop_refactored.rs
 use std::io::{self, Write};
-use std::collections::HashMap;
+//use std::collections::HashMap;
 use crate::ingestion_refactored::{ingest_project_files, SystemBuffer}; // Use refactored ingestion
 use crate::analysis::perform_vocabulary_analysis;
-mod embedding; // Declare the new embedding module
+//mod embedding; // Declare the new embedding module
 use crate::embedding::{create_univalent_multivectors, UnivalentMultivector}; // Import necessary items
 
 pub fn run_ooda_loop() {

@@ -1,9 +1,10 @@
 // src/main.rs
+mod ingestion;
 mod ingestion_refactored;
 mod analysis;
-mod ooda_loop_refactored;
+mod ooda_loop;
 mod embedding;
 
 fn main() {
-    ooda_loop_refactored::run_ooda_loop();
+    ooda_loop::run_ooda_loop();
 }
