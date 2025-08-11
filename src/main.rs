@@ -5,7 +5,7 @@ mod interpreter;
 mod types;
 
 use std::fs;
-use std::io::{self, Read};
+use std::io::Read;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let emojitape_path = "newemojis_with_programs.emojitape"; // Assuming the generated file name

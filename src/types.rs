@@ -1,7 +1,7 @@
 // src/types.rs
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Token<'a> {
+pub enum Token {
     // Prelude
     True, // ✅
     False, // ❌
@@ -48,13 +48,13 @@ pub enum Token<'a> {
     LocalGet, // 📥
     LocalSet, // 📤
     SpawnToken, // 🌱
-    Comment, // 💬
+    Comment(String), // 💬
     EmitWatBlock, // 📦 (re-used for emit_wat_block)
     RuleEntry, // (... )
     ApplyRulesLoop, // ️.apply
 
     // World Tape
-    Word(&'a str), // Generic word token
+    Word(String), // Generic word token
     Integer(i32), // For i32.const
     Float(f32), // For f32.const
     Add, // ➕
@@ -66,25 +66,25 @@ pub enum Token<'a> {
     ZosReady, // /zos ready
     Newline, // For parsing newlines
     Whitespace, // For parsing whitespace
-    Other(&'a str), // Catch-all for unparsed characters
+    Other(String), // Catch-all for unparsed characters
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Rule<'a> {
-    pub name: Option<&'a str>,
-    pub pattern: Vec<Token<'a>>,
-    pub replacement: Vec<Token<'a>>,
+pub struct Rule {
+    pub name: Option<String>,
+    pub pattern: Vec<Token>,
+    pub replacement: Vec<Token>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Emojitape<'a> {
-    pub prelude: Vec<Token<'a>>,
-    pub wasm_compiler_prelude: Vec<Token<'a>>,
-    pub rules: Vec<Rule<'a>>,
-    pub world_tape: Vec<Token<'a>>,
-    pub generated_wat_block: Vec<Token<'a>>,
-    pub clues_keys: Vec<Token<'a>>,
-    pub zos_export_definition: Vec<Token<'a>>,
-    pub zos_export_implementation: Vec<Token<'a>>,
-    pub self_reproducing_footer: Vec<Token<'a>>,
+pub struct Emojitape {
+    pub prelude: Vec<Token>,
+    pub wasm_compiler_prelude: Vec<Token>,
+    pub rules: Vec<Rule>,
+    pub world_tape: Vec<Token>,
+    pub generated_wat_block: Vec<Token>,
+    pub clues_keys: Vec<Token>,
+    pub zos_export_definition: Vec<Token>,
+    pub zos_export_implementation: Vec<Token>,
+    pub self_reproducing_footer: Vec<Token>,
 }

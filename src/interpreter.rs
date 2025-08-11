@@ -1,6 +1,6 @@
 // src/interpreter.rs
 
-use super::types::{Emojitape, Token};
+use crate::types::{Emojitape, Token};
 
 pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
     println!("Executing Emojitape...");
@@ -23,7 +23,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
             Token::Word(w) => print!("{} ", w),
             Token::Newline => println!(""),
             Token::Whitespace => print!(" "),
-            Token::Comment(c) => println!("// {}", c),
+            Token::Comment(_) => println!("// (comment)"),
             // Handle other tokens as needed
             _ => print!("{:?} ", token), // For debugging unhandled tokens
         }
