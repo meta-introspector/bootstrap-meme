@@ -1,4 +1,7 @@
-// src/types.rs
+pub mod impl_token;
+pub use impl_token::*;
+
+pub mod emojis;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
@@ -67,24 +70,4 @@ pub enum Token {
     Newline, // For parsing newlines
     Whitespace, // For parsing whitespace
     Other(String), // Catch-all for unparsed characters
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Rule {
-    pub name: Option<String>,
-    pub pattern: Vec<Token>,
-    pub replacement: Vec<Token>,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Emojitape {
-    pub prelude: Vec<Token>,
-    pub wasm_compiler_prelude: Vec<Token>,
-    pub rules: Vec<Rule>,
-    pub world_tape: Vec<Token>,
-    pub generated_wat_block: Vec<Token>,
-    pub clues_keys: Vec<Token>,
-    pub zos_export_definition: Vec<Token>,
-    pub zos_export_implementation: Vec<Token>,
-    pub self_reproducing_footer: Vec<Token>,
 }

@@ -1,6 +1,7 @@
 // src/interpreter.rs
 
-use crate::types::{Emojitape, Token};
+use crate::types::emojitape::Emojitape;
+use crate::types::token::Token;
 
 pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
     println!("Executing Emojitape...");

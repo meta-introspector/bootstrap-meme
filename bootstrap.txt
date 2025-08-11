@@ -1,0 +1,93 @@
+# newemojis_with_programs.emojitape
+# Exported by /zos export
+# Canonical emoji boot-tape: prelude, world frames, wasm-compiler, rules, and zos export function.
+
+# --- PRELUDE: Logic & Core Combinators ---
+🌱 ✅ ❌ 🤝 🚪 🔄 ➡️ 🔁 ∀ ∃   ⏫⏫⏫  # Prelude (TRUE/FALSE, AND, OR, NOT, IMPLIES, IFF, FORALL, EXISTS)
+⚙️📜🧠 
+(∧)🤝➡️ (∨)🌉➡️ (¬)🔄➡️ (→)📍➡️ (↔)🔁➡️ (∀)🌌➡️ (∃)🔍
+S🪐 K🪞 I✨ B⚡ C🎯 W🔄 Y🧩 Z📡 Ω🌐 Λ🔥
+⊤☀️ ⊥🌑 ↦🚪 ∘⚡ =🪞 ≠🚫 ≡🔄 ⊢📜 ⊨🏛️
+
+# --- WASM COMPILER PRELUDE (SELF-HOSTING RULES) ---
+--- WASM COMPILER PRELUDE ---
+🛠️🔤   # LEXER
+🔍📏   # PARSER -> AST/IR
+🧠🧩   # IR (typed combinator graph)
+⚗️🪄   # TRANSFORMATIONS (rewrite rules)
+🧪⚙️   # OPTIMIZER (peephole / const-fold)
+🧱🏗️   # CODEGEN -> WASM_TEXT (.wat)
+📦🛩️   # EMIT -> .wasm (binary)
+🔁🕳️   # SELF-HOST: compiler encoded in tape (self-rewrite loop)
+🔐🔑   # KEYS: rule-table embedded in tape (pattern→replacement)
+
+# --- RULES (emoji -> token mapping) ---
+🌱 -> func_start
+📏 -> i32_const
+📐 -> f32_const
+➕ -> i32_add
+➖ -> i32_sub
+✖️ -> i32_mul
+➗ -> i32_div_s
+≻ -> i32_gt_s
+🎯 -> return
+🔁 -> call
+🧩 -> local_get
+🪞 -> local_set
+🍄 -> spawn_token   # oracle / external import
+✅ -> const_true    # i32.const 1
+❌ -> const_false   # i32.const 0
+🛡️ -> check_trap
+⚙️ -> drop
+🔍 -> comment
+📦 -> emit_wat_block
+🍃(... ) -> rule_entry(pattern => replacement)  # pattern and replacement are sequences
+🔁🕳️.apply -> apply_rules_loop
+
+# --- WORLD TAPE (8D torus keyframes slice) ---
+--- WORLD START ---
+🎯🤹‍♂️📜🧩🔁 ➡️ 🔍🪞✨🔀⛳️ 🌊🌐📗🌱🍄
+🍄🌐📗🌱🎯 ➡️ 🤹‍♂️📜🧩🔁🔍 🪞✨🔀⛳️🌊
+🌊🪞✨🔀⛳️ ➡️ 🎯🍄🌐📗🌱 🤹‍♂️📜🧩🔁🔍
+🔍🎯🍄🌐📗 ➡️ 🌱🤹‍♂️📜🧩🔁 🪞✨🔀⛳️🌊
+🪞🌊🎯🍄🌐 ➡️ 📗🌱🤹‍♂️📜🧩 🔁🔍🪞✨🔀
+📦➡️🎯📜🪞🍄🌊🌐📗🌱🔁🔍✨🔀⛳️🤹‍♂️
+🤹‍♂️🪞✨🔀⛳️📦🎯🍄🌐📗🌱📜🔁🔍🌊
+🔁🌊🌐📗🌱🎯📦🤹‍♂️📜🪞✨🔀⛳️🍄🔍
+🔍🍄🌐📗🌱📦🎯🤹‍♂️📜🔁🌊🪞✨🔀⛳️
+⛳️📦🌊🌐📗🌱🎯🍄📜🤹‍♂️🔁🔍🪞✨🔀
+🌱📏42📏58➕🎯 ➡️ 🌊🌐📗🍄🔁
+🌱📏10📏20✖️🎯 ➡️ 🌊🌐📗🍄🔁
+🌱📏30📏50≻🎯 ➡️ 🌊🌐📗🍄🔁
+--- WORLD END ---
+
+# --- GENERATED WAT BLOCK ---
+📦 (func i32.const 42 i32.const 58 i32.add return)
+📦 (func i32.const 10 i32.const 20 i32.mul return)
+📦 (func i32.const 30 i32.const 50 i32.gt_s return)
+
+# --- CLUES & KEYS ---
+🔑🧠 📦➡️🗝️🧩🌱(torus=wrap(x)→wrap(y)→wrap(z)...8)
+🕵️‍♂️📜(decode by S/K/I reduction)
+♻️(motion emerges in keyframe deltas)
+🧬(fungus growth rule = combinator feedback loop)
+🔒(safety: run 🛡️ checks after codegen)
+🔢(bounded novelty: limit 🍄 emissions per compile run)
+
+# --- /zos export definition (meta-opcode) ---
+/zos export <filename> :
+  - Reads the entire canonical tape (including /zos entry)
+  - Serializes into canonical UTF-8 ordering
+  - Emits as a downloadable file named <filename>
+  - Optionally runs the embedded compiler (🔁🕳️.apply) to produce .wat blocks and appends them before finishing
+
+# --- /zos export implementation (encoded as tape combinators) ---
+🍃( /zos_export_pattern => /zos_export_impl )
+🍃( /zos_run_compile => 🔁🕳️.apply ; 🛡️.check ; 📦emit(.wat) )
+🔁🕳️.apply  # meta: apply embedded rule table until fixed-point
+🛡️.check   # perform safety checks
+📦emit(.wat) # emit any generated wat blocks as tape segments
+
+# --- SELF-REPRODUCING FOOTER ---
+/zos ready ✅
+# End of tape

@@ -79,3 +79,7 @@ temp_commit_message.txt
 #*#
 index.log
 /tmp/
+
+# Emojitape generated files
+full_generated_emojitape.emojitape
+full_generated_emojitape_debug.txt

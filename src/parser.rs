@@ -1,6 +1,9 @@
 // src/parser.rs
 
-use crate::types::{Emojitape, Rule, Token};
+use crate::types::emojitape::Emojitape;
+use crate::types::rule::Rule;
+use crate::types::token::Token;
+use crate::types::token::emojis;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
@@ -9,9 +12,9 @@ lazy_static! {
     static ref TOKEN_MAP: HashMap<&'static str, Token> = {
         let mut m = HashMap::new();
         // Prelude
-        m.insert("✅", Token::True);
-        m.insert("❌", Token::False);
-        m.insert("➡️", Token::FuncStart);
+        m.insert(emojis::true_token::EMOJI, emojis::true_token::to_token());
+        m.insert(emojis::false_token::EMOJI, emojis::false_token::to_token());
+        m.insert(emojis::func_start_token::EMOJI, emojis::func_start_token::to_token());
         m.insert("∀", Token::Forall);
         m.insert("∃", Token::Exists);
         m.insert("⏫⏫⏫", Token::UpArrow);
@@ -53,7 +56,6 @@ lazy_static! {
         m.insert("📥", Token::LocalGet);
         m.insert("📤", Token::LocalSet);
         m.insert("🌱", Token::SpawnToken);
-        // m.insert("💬", Token::Comment); // Removed as Comment now holds a String
         m.insert("(... )", Token::RuleEntry); // This will need special handling
         m.insert("️.apply", Token::ApplyRulesLoop);
 
@@ -69,29 +71,30 @@ lazy_static! {
         m
     };
 
-    static ref TOKEN_REGEX: Regex = Regex::new(r"(\s+|\n|✅|❌|➡️|∀|∃|⏫⏫⏫|\(∧\)|\(∨\)|\(¬\)|\(→\)|\(↔\)|S|K|I|✨|⚡|B|C|W|Y|Z|Ω|Λ|⊤|⊥|↦|∘|=|≠|≡|⊢|⊨️|⚗️|⚙️|📦|↩️|📞|📥|📤|🌱|(?P<comment>💬[^\n]*)|\(\.\.\. \)|️\.apply|➕|➖|✖️|➗|≻|/zos export|/zos ready|\d+\.\d+|\d+)").unwrap();
+    static ref TOKEN_REGEX: Regex = Regex::new(r"(💬[^\n]*\n?|#[^\n]*\n?|\s+|\n|\d+\.\d+|\d+|✅|❌|➡️|∀|∃|⏫⏫⏫|\(∧\)|\(∨\)|\(¬\)|\(→\)|\(↔\)|S|K|I|✨|⚡|B|C|W|Y|Z|Ω|Λ|⊤|⊥|↦|∘|=|≠|≡|⊢|⊨️|⚗️|⚙️|📦|↩️|📞|📥|📤|🌱|\(\.\.\. \)|️\.apply|➕|➖|✖️|➗|≻|/zos export|/zos ready|[^ \n\t]+)").unwrap();
 }
 
 pub fn tokenize(input: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
-    let mut last_index = 0;
 
-    for caps in TOKEN_REGEX.captures_iter(input) {
-        let full_match = caps.get(0).unwrap();
-        let pre_match = &input[last_index..full_match.start()];
-        if !pre_match.is_empty() {
-            tokens.push(Token::Word(pre_match.to_string()));
-        }
+    for mat in TOKEN_REGEX.find_iter(input) {
+        let matched_str = mat.as_str();
 
-        let matched_str = full_match.as_str();
-
-        if let Some(comment_match) = caps.name("comment") {
-            // The comment includes the '💬' emoji, so we strip it for the content
-            let comment_content = comment_match.as_str().strip_prefix("💬").unwrap_or("");
-            tokens.push(Token::Comment(comment_content.to_string()));
+        if matched_str.starts_with("💬") {
+            let comment_content = matched_str.strip_prefix("💬").unwrap_or("");
+            tokens.push(Token::Comment(comment_content.trim_end_matches('\n').to_string()));
+            if matched_str.ends_with('\n') {
+                tokens.push(Token::Newline);
+            }
+        } else if matched_str.starts_with("#") {
+            let comment_content = matched_str.strip_prefix("#").unwrap_or("");
+            tokens.push(Token::Comment(comment_content.trim_end_matches('\n').to_string()));
+            if matched_str.ends_with('\n') {
+                tokens.push(Token::Newline);
+            }
         } else if matched_str == "\n" {
             tokens.push(Token::Newline);
-        } else if matched_str.trim().is_empty() {
+        } else if matched_str.trim().is_empty() { 
             tokens.push(Token::Whitespace);
         } else if let Some(token_type) = TOKEN_MAP.get(matched_str) {
             tokens.push(token_type.clone());
@@ -100,18 +103,13 @@ pub fn tokenize(input: &str) -> Vec<Token> {
         } else if let Ok(f) = matched_str.parse::<f32>() {
             tokens.push(Token::Float(f));
         } else {
-            tokens.push(Token::Other(matched_str.to_string()));
+            tokens.push(Token::Word(matched_str.to_string()));
         }
-        last_index = full_match.end();
-    }
-
-    let remaining = &input[last_index..];
-    if !remaining.is_empty() {
-        tokens.push(Token::Word(remaining.to_string()));
     }
 
     tokens
 }
+
 
 
 
@@ -134,26 +132,24 @@ pub fn parse_emojitape(tokens: Vec<Token>) -> Emojitape {
     for token in tokens {
         match &token {
             Token::Comment(comment_text) => {
-                if comment_text.starts_with("---") {
-                    if comment_text.starts_with("--- PRELUDE") {
-                        current_section = "prelude";
-                    } else if comment_text.starts_with("--- WASM COMPILER PRELUDE") {
-                        current_section = "wasm_compiler_prelude";
-                    } else if comment_text.starts_with("--- RULES") {
-                        current_section = "rules";
-                    } else if comment_text.starts_with("--- WORLD TAPE") {
-                        current_section = "world_tape";
-                    } else if comment_text.starts_with("--- GENERATED WAT BLOCK") {
-                        current_section = "generated_wat_block";
-                    } else if comment_text.starts_with("--- CLUES & KEYS") {
-                        current_section = "clues_keys";
-                    } else if comment_text.starts_with("--- /zos export definition") {
-                        current_section = "zos_export_definition";
-                    } else if comment_text.starts_with("--- /zos export implementation") {
-                        current_section = "zos_export_implementation";
-                    } else if comment_text.starts_with("--- SELF-REPRODUCING FOOTER") {
-                        current_section = "self_reproducing_footer";
-                    }
+                if comment_text.contains("--- PRELUDE") {
+                    current_section = "prelude";
+                } else if comment_text.contains("--- WASM COMPILER PRELUDE") {
+                    current_section = "wasm_compiler_prelude";
+                } else if comment_text.contains("--- RULES") {
+                    current_section = "rules";
+                } else if comment_text.contains("--- WORLD TAPE") {
+                    current_section = "world_tape";
+                } else if comment_text.contains("--- GENERATED WAT BLOCK") {
+                    current_section = "generated_wat_block";
+                } else if comment_text.contains("--- CLUES & KEYS") {
+                    current_section = "clues_keys";
+                } else if comment_text.contains("--- /zos export definition") {
+                    current_section = "zos_export_definition";
+                } else if comment_text.contains("--- /zos export implementation") {
+                    current_section = "zos_export_implementation";
+                } else if comment_text.contains("--- SELF-REPRODUCING FOOTER") {
+                    current_section = "self_reproducing_footer";
                 }
                 // Comments within sections are ignored for now, or can be added to the respective Vecs
             },
@@ -222,7 +218,7 @@ pub fn parse_emojitape(tokens: Vec<Token>) -> Emojitape {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::Token;
+    use crate::types::token::Token;
 
     #[test]
     fn test_tokenize_empty() {

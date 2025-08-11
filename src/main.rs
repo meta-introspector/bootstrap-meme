@@ -8,7 +8,7 @@ use std::fs;
 use std::io::Read;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let emojitape_path = "newemojis_with_programs.emojitape"; // Assuming the generated file name
+    let emojitape_path = "full_generated_emojitape.emojitape"; // Assuming the generated file name
 
     let mut file = fs::File::open(emojitape_path)?;
     let mut emojitape_content = String::new();
