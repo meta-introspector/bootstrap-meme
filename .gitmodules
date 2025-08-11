@@ -1,0 +1,9 @@
+[submodule "vendor/coccinelleforrust"]
+	path = vendor/coccinelleforrust
+	url = https://gitlab.inria.fr/coccinelle/coccinelleforrust
+[submodule "replicated_program_output"]
+	path = replicated_program_output
+	url = https://github.com/meta-introspector/bootstrap-meme.git
+[submodule "replicated_program_cocci"]
+	path = replicated_program_cocci
+	url = https://github.com/meta-introspector/bootstrap-meme.git

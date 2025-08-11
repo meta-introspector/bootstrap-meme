@@ -1,6 +1,5 @@
 // src/main.rs
 mod ingestion;
-mod ingestion_refactored;
 mod analysis;
 mod ooda_loop;
 mod embedding;

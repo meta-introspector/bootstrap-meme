@@ -1,10 +1,12 @@
-// src/ooda_loop_refactored.rs
+// src/ooda_loop.rs
 use std::io::{self, Write};
 //use std::collections::HashMap;
-use crate::ingestion_refactored::{ingest_project_files, SystemBuffer}; // Use refactored ingestion
+use crate::ingestion::{ingest_project_files};
+//use crate::buffer::{SystemBuffer, FileRecord}; // Import SystemBuffer and FileRecord from buffer
+use system_e_schema_core::buffer::{SystemBuffer}; // Import SystemBuffer and FileRecord from buffer
 use crate::analysis::perform_vocabulary_analysis;
-//mod embedding; // Declare the new embedding module
-use crate::embedding::{create_univalent_multivectors, UnivalentMultivector}; // Import necessary items
+//mod embedding;
+use crate::embedding::{create_univalent_multivectors, UnivalentMultivector};
 
 pub fn run_ooda_loop() {
     println!("--- Starting System `e` Quine Bootstrap ---");
@@ -21,15 +23,16 @@ pub fn run_ooda_loop() {
     println!("    -> [Embedding Report]: Created {} univalent multivectors.", multivectors.len());
 
     // OODA Cycle: Decide and Act
-    perform_single_ooda_cycle(&buffer, multivectors); // Pass multivectors
+    perform_single_ooda_cycle(&buffer, &multivectors); // Pass a reference
     
     println!("\n--- System `e` session ended. ---
 ");
 }
 
-fn perform_single_ooda_cycle(buffer: &SystemBuffer, initial_multivectors: Vec<UnivalentMultivector>) {
+fn perform_single_ooda_cycle(buffer: &SystemBuffer, initial_multivectors: &Vec<UnivalentMultivector>) {
     let choice = get_user_choice();
 
+    // Pass a reference to initial_multivectors to handle_user_action
     let should_exit = handle_user_action(choice, buffer, initial_multivectors);
 
     if should_exit {
@@ -38,8 +41,6 @@ fn perform_single_ooda_cycle(buffer: &SystemBuffer, initial_multivectors: Vec<Un
 
     if prompt_for_continuation() {
         // Re-run the single cycle function, passing the buffer and the initial multivectors
-        // Note: For a true continuous OODA, the buffer and multivectors might need to be updated
-        // or re-ingested based on the 'Act' phase's output.
         perform_single_ooda_cycle(buffer, initial_multivectors);
     }
 }
@@ -50,14 +51,15 @@ fn get_user_choice() -> String {
     println!("  2. Bootstrap (simulate quine bootstrap)");
     println!("  3. Exit");
     print!("Enter your choice: ");
-    io::stdout().flush().unwrap(); // Ensure prompt is displayed
+    io::stdout().flush().unwrap();
 
     let mut choice = String::new();
     io::stdin().read_line(&mut choice).unwrap();
-    choice.trim().to_string()
+    let _choice = choice.trim().to_string();
+    "FIXME".to_string()
 }
 
-fn handle_user_action(choice: String, buffer: &SystemBuffer, current_multivectors: Vec<UnivalentMultivector>) -> bool {
+fn handle_user_action(choice: String, buffer: &SystemBuffer, current_multivectors: &Vec<UnivalentMultivector>) -> bool {
     println!("\n[OODA - ACT] Executing chosen action...");
     match choice.as_str() {
         "1" | "vocabulary" => {
@@ -81,28 +83,48 @@ fn handle_user_action(choice: String, buffer: &SystemBuffer, current_multivector
 
 fn run_vocabulary_action(buffer: &SystemBuffer) {
     println!("    -> Running vocabulary analysis and embedding...");
-    let term_counts = perform_vocabulary_analysis(&buffer);
+    let term_counts = perform_vocabulary_analysis(buffer);
     println!("    -> [Analysis Report]: Vocabulary analysis complete. Found {} unique terms.", term_counts.len());
     let multivectors = create_univalent_multivectors(&term_counts);
-    println!("    -> [Embedding Report]: Created {} univalent multivectors.", multivectors.len());
+    println!("    -> [Embedding Report]: Created {} univalent multivectors.
+", multivectors.len());
 }
 
-fn run_bootstrap_action(buffer: &SystemBuffer, current_multivectors: Vec<UnivalentMultivector>) {
-    println!("\n    -> [BOOTSTRAP - Step 1] Reading source repository (conceptual: all files already ingested)...\n");
-    // For quine bootstrap, specifically ingest .md files as per SOP
-    let md_buffer = ingest_project_files(Some("md")); // Ingest only .md files for bootstrap
-    println!("        -> Ingested {} .md files for bootstrap.", md_buffer.files.len());
+fn run_bootstrap_action(_buffer: &SystemBuffer, _current_multivectors: &Vec<UnivalentMultivector>) {
+    println!("\n    -> [BOOTSTRAP - Step 1] Reading source repository (conceptual: all files already ingested)...
+");
+    let md_buffer = ingest_project_files(Some("md"));
+    println!("        -> Ingested {} .md files for bootstrap.
+", md_buffer.files.len());
 
-    println!("    -> [BOOTSTRAP - Step 2] Translating to embedding space (conceptual: applying procedures)....");
-    let bootstrap_term_counts = perform_vocabulary_analysis(&md_buffer); // Use md_buffer for analysis
+    println!("        -> Reading 00_univalent_embedding_scheme.md for embedding logic...");
+    if let Ok(content) = std::fs::read_to_string("00_univalent_embedding_scheme.md") {
+        println!("            -> Content snippet: \"{}\"...", content.lines().next().unwrap_or("").trim_end());
+    } else {
+        println!("            -> Could not read 00_univalent_embedding_scheme.md.");
+    }
+
+    println!("        -> Reading docs/sops/sop_meta_meme_heros_journey.md for conceptual journey...");
+    if let Ok(content) = std::fs::read_to_string("docs/sops/sop_meta_meme_heros_journey.md") {
+        println!("            -> Content snippet: \"{}\"...", content.lines().next().unwrap_or("").trim_end());
+    } else {
+        println!("            -> Could not read docs/sops/sop_meta_meme_heros_journey.md.");
+    }
+
+
+    println!("    -> [BOOTSTRAP - Step 2] Translating to embedding space (conceptual: applying procedures)....
+");
+    let bootstrap_term_counts = perform_vocabulary_analysis(&md_buffer);
     println!("        -> [Translation Report]: Vocabulary analysis complete. Found {} unique terms.", bootstrap_term_counts.len());
     let bootstrap_multivectors = create_univalent_multivectors(&bootstrap_term_counts);
     println!("        -> [Embedding Report]: Created {} univalent multivectors.", bootstrap_multivectors.len());
 
-    println!("\n    -> [BOOTSTRAP - Step 3] Executing reasoning upon the self (conceptual: LLM interaction)...");
+    println!("\n    -> [BOOTSTRAP - Step 3] Executing reasoning upon the self (conceptual: LLM interaction)...
+");
     simulate_llm_reasoning(&bootstrap_multivectors); // Pass multivectors
 
-    println!("\n    -> [BOOTSTRAP - Step 4] Generating new files (conceptual: quine output)...");
+    println!("\n    -> [BOOTSTRAP - Step 4] Generating new files (conceptual: quine output)...
+");
     simulate_quine_output(&md_buffer); // Pass md_buffer for quine output simulation
     println!("    -> Quine bootstrap simulation complete. Cycle ready to begin again.");
 }

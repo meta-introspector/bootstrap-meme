@@ -1,6 +1,7 @@
 // src/analysis.rs
 use std::collections::HashMap;
-use crate::ingestion::SystemBuffer; // Import SystemBuffer from ingestion module
+//use crate::buffer::SystemBuffer; // Import SystemBuffer from canonical buffer module
+use system_e_schema_core::buffer::{SystemBuffer}; // Import from canonical buffer module
 
 pub fn perform_vocabulary_analysis(buffer: &SystemBuffer) -> HashMap<String, u32> {
     println!("    -> [Executing Module: Vocabulary Analysis]");

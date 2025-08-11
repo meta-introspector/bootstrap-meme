@@ -1,18 +1,8 @@
-// src/ingestion_refactored.rs
+// src/ingestion.rs
 use std::fs;
 use walkdir::WalkDir;
-
-// An index record for a single file loaded into the SystemBuffer.
-#[derive(Debug)]
-pub struct FileRecord {
-    pub content: String,
-}
-
-/// The main, structured memory buffer for the entire system.
-#[derive(Debug)]
-pub struct SystemBuffer {
-    pub files: Vec<FileRecord>,
-}
+//use crate::buffer::{FileRecord, SystemBuffer}; // Import from canonical buffer module
+use system_e_schema_core::buffer::{FileRecord, SystemBuffer}; // Import from canonical buffer module
 
 pub fn ingest_project_files(file_extension_filter: Option<&str>) -> SystemBuffer {
     println!("\n[OODA - OBSERVE] Ingesting project files...\n");
@@ -46,3 +36,4 @@ pub fn ingest_project_files(file_extension_filter: Option<&str>) -> SystemBuffer
     println!("Total files loaded into buffer: {}", buffer.files.len());
     buffer
 }
+
