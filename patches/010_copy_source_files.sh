@@ -1,3 +1,8 @@
+#!/bin/bash
+# This script adds logic to copy source files to the replicated program directory.
+
+# Write the content to src/replication.rs
+cat <<EOF > src/replication.rs
 use std::fs;
 use std::process::Command;
 use std::path::{Path, PathBuf};
@@ -35,8 +40,8 @@ pub fn replicate_self() -> Result<(), Box<dyn std::error::Error>> {
             if relative_path.to_str() == Some(".git") || relative_path.to_str() == Some("target") || relative_path.to_str() == Some("replicated_program_output") {
                 continue; // Skip .git, target, and the output directory itself
             }
-            // Recursively copy contents of subdirectories
-            copy_dir_all(&path, &dest_path)?;
+            fs::create_dir_all(&dest_path)?;
+            // TODO: Recursively copy contents of subdirectories
         }
     }
     println!("Copied source files to: {:?}", new_dir_path);
@@ -44,17 +49,4 @@ pub fn replicate_self() -> Result<(), Box<dyn std::error::Error>> {
     // TODO: Add actual replication logic here
     Ok(())
 }
-
-fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<(), Box<dyn std::error::Error>> {
-    fs::create_dir_all(&dst)?;
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let ty = entry.file_type()?;
-        if ty.is_dir() {
-            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
-        } else {
-            fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
-        }
-    }
-    Ok(())
-}
+EOF

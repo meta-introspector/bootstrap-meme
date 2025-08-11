@@ -1,3 +1,8 @@
+#!/bin/bash
+# This script adds recursive directory copying logic to src/replication.rs.
+
+# Write the content to src/replication.rs
+cat <<EOF > src/replication.rs
 use std::fs;
 use std::process::Command;
 use std::path::{Path, PathBuf};
@@ -58,3 +63,4 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<(), Box<
     }
     Ok(())
 }
+EOF
