@@ -1,3 +1,8 @@
+#!/bin/bash
+# This script adds logic to initialize a Git repository in the replicated program directory.
+
+# Write the content to src/replication.rs
+cat <<EOF > src/replication.rs
 use std::fs;
 use std::process::Command;
 use std::path::{Path, PathBuf};
@@ -24,3 +29,4 @@ pub fn replicate_self() -> Result<(), Box<dyn std::error::Error>> {
     // TODO: Add actual replication logic here
     Ok(())
 }
+EOF
