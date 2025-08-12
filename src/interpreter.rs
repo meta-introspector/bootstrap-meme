@@ -106,6 +106,77 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                     return Err("Not enough operands for I combinator.".to_string());
                 }
             },
+            Token::And => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(if a != 0 && b != 0 { 1 } else { 0 });
+                } else {
+                    return Err("Not enough operands for And operation.".to_string());
+                }
+            },
+            Token::Or => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(if a != 0 || b != 0 { 1 } else { 0 });
+                } else {
+                    return Err("Not enough operands for Or operation.".to_string());
+                }
+            },
+            Token::Not => {
+                if stack.len() >= 1 {
+                    let a = stack.pop().unwrap();
+                    stack.push(if a == 0 { 1 } else { 0 });
+                } else {
+                    return Err("Not enough operands for Not operation.".to_string());
+                }
+            },
+            Token::Implies => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(if a == 0 || b != 0 { 1 } else { 0 }); // NOT a OR b
+                } else {
+                    return Err("Not enough operands for Implies operation.".to_string());
+                }
+            },
+            Token::Iff => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(if (a != 0 && b != 0) || (a == 0 && b == 0) { 1 } else { 0 }); // (a AND b) OR (NOT a AND NOT b)
+                } else {
+                    return Err("Not enough operands for Iff operation.".to_string());
+                }
+            },
+            Token::Equals => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(if a == b { 1 } else { 0 });
+                } else {
+                    return Err("Not enough operands for Equals operation.".to_string());
+                }
+            },
+            Token::NotEquals => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(if a != b { 1 } else { 0 });
+                } else {
+                    return Err("Not enough operands for NotEquals operation.".to_string());
+                }
+            },
+            Token::Identical => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(if a == b { 1 } else { 0 }); // For now, identical is same as equals
+                } else {
+                    return Err("Not enough operands for Identical operation.".to_string());
+                }
+            },
             // Handle other tokens as needed
             _ => {
                 return Err(format!("Unhandled token in World Tape: {token:?}"));
