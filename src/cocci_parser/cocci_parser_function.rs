@@ -7,10 +7,10 @@ pub fn parse_cocci_content(cocci_content: &str) -> Vec<CocciElement> {
     for line in lines {
         let trimmed_line = line.trim();
 
-        if trimmed_line.starts_with("@") && trimmed_line.ends_with("@") {
-            elements.push(CocciElement::RuleHeader(trimmed_line.trim_matches('@').to_string()));
-        } else if trimmed_line == "@@" {
+        if trimmed_line == "@@" {
             elements.push(CocciElement::Separator);
+        } else if trimmed_line.starts_with("@") && trimmed_line.ends_with("@") {
+            elements.push(CocciElement::RuleHeader(trimmed_line.trim_matches('@').to_string()));
         } else if trimmed_line.starts_with("identifier") {
             elements.push(CocciElement::Identifier(trimmed_line.to_string()));
         } else if trimmed_line.starts_with("+") {
