@@ -6,7 +6,9 @@ fn build_token_map() -> HashMap<&'static str, Token> {
     let mut m = HashMap::new();
     // Prelude
     m.insert(emojis::true_token::EMOJI, emojis::true_token::to_token());
+    m.insert(emojis::true_token::ASCII_EQUIVALENT, emojis::true_token::to_token());
     m.insert(emojis::false_token::EMOJI, emojis::false_token::to_token());
+    m.insert(emojis::false_token::ASCII_EQUIVALENT, emojis::false_token::to_token());
     m.insert(emojis::func_start_token::EMOJI, emojis::func_start_token::to_token());
     m.insert(emojis::forall_token::EMOJI, emojis::forall_token::to_token());
     m.insert(emojis::exists_token::EMOJI, emojis::exists_token::to_token());
@@ -64,6 +66,10 @@ fn build_token_map() -> HashMap<&'static str, Token> {
     m.insert(emojis::zos_ready_token::EMOJI, emojis::zos_ready_token::to_token());
     m.insert(emojis::newline_token::EMOJI, emojis::newline_token::to_token());
     m.insert(emojis::newline_token::ASCII_EQUIVALENT, emojis::newline_token::to_token());
+    m.insert(emojis::i32_const_token::EMOJI, emojis::i32_const_token::to_token());
+    m.insert(emojis::i32_const_token::ASCII_EQUIVALENT, emojis::i32_const_token::to_token());
+    m.insert(emojis::f32_const_token::EMOJI, emojis::f32_const_token::to_token());
+    m.insert(emojis::f32_const_token::ASCII_EQUIVALENT, emojis::f32_const_token::to_token());
 
     m
 }
@@ -82,7 +88,7 @@ pub fn tokenize(input: &str) -> Vec<Token> {
             i += start_char_len;
             let comment_end = remaining_slice[start_char_len..].find(emojis::newline_token::ASCII_EQUIVALENT).unwrap_or(remaining_slice[start_char_len..].len());
             let comment_content = &remaining_slice[start_char_len..start_char_len + comment_end];
-            tokens.push(Token::Comment(comment_content.trim_end().to_string()));
+            tokens.push(Token::Comment(comment_content.trim().to_string()));
             i += comment_end;
             continue;
         }
@@ -183,7 +189,7 @@ mod tests {
     fn test_tokenize_simple() {
         let input = "🌱✅❌";
         let expected = vec![
-            Token::FuncStart,
+            Token::SpawnToken,
             Token::True,
             Token::False,
         ];
@@ -194,12 +200,10 @@ mod tests {
     fn test_tokenize_with_numbers() {
         let input = "📏42 📐3.14";
         let expected = vec![
-            Token::I32Const,
-            Token::Whitespace,
+            Token::I32Const(0),
             Token::Integer(42),
             Token::Whitespace,
-            Token::F32Const,
-            Token::Whitespace,
+            Token::F32Const(0.0),
             Token::Float(3.14),
         ];
         assert_eq!(tokenize(input), expected);
@@ -223,7 +227,7 @@ mod tests {
         let expected = vec![
             Token::Comment("this is a comment".to_string()),
             Token::Newline,
-            Token::FuncStart,
+            Token::SpawnToken,
         ];
         assert_eq!(tokenize(input), expected);
     }
@@ -232,16 +236,14 @@ mod tests {
     fn test_tokenize_mixed() {
         let input = "🌱 📏42 ➕ 📏58 🎯";
         let expected = vec![
-            Token::FuncStart,
+            Token::SpawnToken,
             Token::Whitespace,
-            Token::I32Const,
-            Token::Whitespace,
+            Token::I32Const(0),
             Token::Integer(42),
             Token::Whitespace,
             Token::Add,
             Token::Whitespace,
-            Token::I32Const,
-            Token::Whitespace,
+            Token::I32Const(0),
             Token::Integer(58),
             Token::Whitespace,
             Token::Return,

@@ -50,3 +50,5 @@ pub mod gt_s_token;
 pub mod zos_export_token;
 pub mod zos_ready_token;
 pub mod newline_token;
+pub mod i32_const_token;
+pub mod f32_const_token;

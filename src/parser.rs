@@ -34,11 +34,11 @@ pub fn parse_emojitape(tokens_vec: Vec<Token>) -> Emojitape {
                         expected_output_buffer.clear();
                     }
 
-                    if comment_text.contains("PRELUDE") {
-                        current_section = "prelude";
-                    }
-                    else if comment_text.contains("WASM COMPILER PRELUDE") {
+                    if comment_text.contains("WASM COMPILER PRELUDE") {
                         current_section = "wasm_compiler_prelude";
+                    }
+                    else if comment_text.contains("PRELUDE") {
+                        current_section = "prelude";
                     }
                     else if comment_text.contains("RULES") {
                         current_section = "rules";
