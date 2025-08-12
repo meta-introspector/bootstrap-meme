@@ -13,4 +13,5 @@ pub struct Emojitape {
     pub zos_export_definition: Vec<crate::types::token::Token>,
     pub zos_export_implementation: Vec<crate::types::token::Token>,
     pub self_reproducing_footer: Vec<crate::types::token::Token>,
+    pub expected_output: Option<String>,
 }

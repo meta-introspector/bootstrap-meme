@@ -23,6 +23,7 @@ An Emojitape program is divided into several distinct sections, marked by specia
 *   `GENERATED WAT BLOCK`: Contains compiled WebAssembly code generated from the tape.
 *   `ZOS EXPORT`: Sections for defining and implementing interfaces to an external ontology system.
 *   `SELF-REPRODUCING FOOTER`: A dedicated section for creating quines (self-reproducing programs).
+*   `EXPECTED OUTPUT`: Specifies the expected output of the program, useful for testing and validation.
 
 ### Rule Syntax
 
@@ -55,9 +56,12 @@ Here is a simple Emojitape program from `tapes/simple.emojitape`:
 
 💬--- WORLD TAPE
 1 2 ➕
+
+💬--- EXPECTED OUTPUT
+3
 ```
 
-This simple example demonstrates RPN by pushing `1` and `2` onto the stack, and then `➕` adds them together.
+This simple example demonstrates RPN by pushing `1` and `2` onto the stack, and then `➕` adds them together. The `EXPECTED OUTPUT` section indicates that the program should produce `3`.
 
 ## ▶️ Usage
 
@@ -107,6 +111,7 @@ cargo run --bin rust_program_generator tapes/my_program.emojitape my_rust_app
     *   **Term Rewriting**: A dedicated `RULES` section for defining transformation rules.
 *   **Metaprogramming**: Designed for code generation and self-replication, with a dedicated `SELF-REPRODUCING FOOTER`.
 *   **Interpreter**: Directly execute Emojitape code.
+*   **Test Spec Validation**: The interpreter can validate its output against an `EXPECTED OUTPUT` section in the Emojitape file, providing immediate feedback on program correctness.
 *   **Compiler/Transpiler**:
     *   Compiles Emojitape to standalone **Rust** programs.
     *   Compiles Emojitape to the **WebAssembly Text Format (`.wat`)**.

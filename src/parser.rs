@@ -18,13 +18,22 @@ pub fn parse_emojitape(tokens_vec: Vec<Token>) -> Emojitape {
         zos_export_definition: Vec::new(),
         zos_export_implementation: Vec::new(),
         self_reproducing_footer: Vec::new(),
+        expected_output: None, // Initialize new field
     };
 
     let mut current_section = "";
+    let mut expected_output_buffer = String::new(); // Buffer for expected output
+
     while let Some(token) = tokens.next() {
         match &token {
             Token::Comment(comment_text) => {
                 if comment_text.contains("---") {
+                    // If we were in expected_output section, finalize it
+                    if current_section == "expected_output" {
+                        emojitape.expected_output = Some(expected_output_buffer.trim().to_string());
+                        expected_output_buffer.clear();
+                    }
+
                     if comment_text.contains("PRELUDE") {
                         current_section = "prelude";
                     }
@@ -51,6 +60,9 @@ pub fn parse_emojitape(tokens_vec: Vec<Token>) -> Emojitape {
                     }
                     else if comment_text.contains("SELF-REPRODUCING FOOTER") {
                         current_section = "self_reproducing_footer";
+                    }
+                    else if comment_text.contains("EXPECTED OUTPUT") { // New section
+                        current_section = "expected_output";
                     }
                 }
             },
@@ -154,10 +166,20 @@ pub fn parse_emojitape(tokens_vec: Vec<Token>) -> Emojitape {
                             emojitape.self_reproducing_footer.push(token.clone())
                         }
                     },
+                    "expected_output" => {
+                        if !matches!(token, Token::Newline | Token::Whitespace) {
+                            expected_output_buffer.push_str(&token.to_string());
+                        }
+                    },
                     _ => {},
                 }
             }
         }
+    }
+
+    // Finalize expected_output if it was the last section
+    if current_section == "expected_output" && !expected_output_buffer.is_empty() {
+        emojitape.expected_output = Some(expected_output_buffer.trim().to_string());
     }
 
     emojitape
