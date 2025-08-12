@@ -1,7 +1,7 @@
 use crate::types::emojitape::types::Emojitape;
 use crate::types::token::Token;
-use crate::types::rule::Rule;
 use std::collections::HashMap;
+use crate::types::token::executable::ExecutableToken; // Import ExecutableToken trait
 use crate::types::token::emojis::drop_token;
 use crate::types::token::emojis::true_token;
 use crate::types::token::emojis::false_token;
@@ -23,16 +23,17 @@ use crate::types::token::emojis::call_token;
 use crate::types::token::emojis::local_get_token;
 use crate::types::token::emojis::local_set_token;
 use crate::types::token::emojis::emit_wat_block_token;
-use crate::types::token::emojis::add_token;
+//use crate::types::token::emojis::add_token;
 use crate::types::token::emojis::sub_token;
 use crate::types::token::emojis::mul_token;
 use crate::types::token::emojis::div_s_token;
 use crate::types::token::emojis::gt_s_token;
 use crate::types::token::emojis::newline_token;
-use crate::types::token::emojis::i32_const_token;
 use crate::types::token::emojis::whitespace_token;
 use crate::types::token::emojis::comment_token;
 use crate::types::token::emojis::unhandled_token;
+pub mod rule_matcher;
+pub use rule_matcher::match_and_replace;
 
 pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
     println!("Executing Emojitape...");
@@ -47,11 +48,14 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
 
     while let Some(token) = tokens_iter.next() {
         match token {
-            Token::Integer(i) => {
-                i32_const_token::execute_i32_const(i, &mut stack, &mut locals, &mut tokens_iter)?;
+            Token::Integer(_i) => {
+                token.execute(&mut stack, &mut locals, &mut tokens_iter)?;
+            },
+            Token::I32Const(_i) => {
+                token.execute(&mut stack, &mut locals, &mut tokens_iter)?;
             },
             Token::Add => {
-                add_token::execute_add(&mut stack, &mut locals, &mut tokens_iter)?;
+                token.execute(&mut stack, &mut locals, &mut tokens_iter)?;
             },
             Token::Sub => {
                 sub_token::execute_sub(&mut stack, &mut locals, &mut tokens_iter)?;
@@ -203,7 +207,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
         let output_filename = "exported_emojitape.txt"; // Placeholder filename
         match std::fs::write(output_filename, format!(r#"{{emojitape:#?}}"#)) {
             Ok(_) => println!("Emojitape exported to {{output_filename}}"),
-            Err(e) => println!("Error exporting emojitape: {{e}}"),
+            Err(_e) => println!("Error exporting emojitape: {_e}"),
         }
         println!("--- End /zos Export ---");
     }
@@ -212,19 +216,4 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
     Ok(())
 }
 
-fn match_and_replace(target: &[Token], rule: &Rule) -> Vec<Token> {
-    let mut result = Vec::new();
-    let mut i = 0;
-    while i < target.len() {
-        if i + rule.pattern.len() <= target.len() && target[i..i + rule.pattern.len()] == rule.pattern[..] {
-            // Match found, append replacement
-            result.extend_from_slice(&rule.replacement);
-            i += rule.pattern.len(); // Advance past the matched pattern
-        } else {
-            // No match, append current token
-            result.push(target[i].clone());
-            i += 1;
-        }
-    }
-    result
-}
+

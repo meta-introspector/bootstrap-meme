@@ -6,7 +6,7 @@ use crate::types::token::executable::ExecutableToken; // Import the trait
 use std::collections::HashMap;
 use std::iter::Peekable;
 use std::slice::Iter;
-use crate::types::token::emojis::add_token;
+//use crate::types::token::emojis::add_token;
 use strum::IntoEnumIterator; // Import IntoEnumIterator for Token::iter()
 
 impl fmt::Display for Token {
@@ -120,8 +120,19 @@ impl ExecutableToken for Token {
                 stack.push(*i);
                 Ok(())
             },
+            Token::I32Const(i) => {
+                stack.push(*i);
+                Ok(())
+            },
             Token::Add => {
-                add_token::execute_add(stack, locals, tokens_iter)
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(a + b);
+                    Ok(())
+                } else {
+                    Err("Not enough operands for Add operation.".to_string())
+                }
             },
             Token::Sub => {
                 if stack.len() >= 2 {
