@@ -4,7 +4,7 @@ use std::fs;
 use std::io::Read;
 use std::env;
 
-mod rust_to_emoji_workaround;
+
 mod emoji_to_rust_standalone;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // 2. Convert Rust to Emojis
         println!("\nConverting Rust to Emojis...");
-        let emoji_tokens = rust_to_emoji_workaround::rust_code_to_emojis(&original_rust_code)?;
+        let emoji_tokens = emojitape_interpreter::rust_to_emoji::rust_code_to_emojis(&original_rust_code)?;
         println!("Converted Emoji Tokens: {:?}", emoji_tokens);
 
         // 3. Convert Emojis back to Rust
