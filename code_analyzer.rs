@@ -1,8 +1,9 @@
 use crate::core::{
-    declaration_splitter::{Declaration, DeclarationSplitter, DeclarationType},
     duplicate_detector::{DuplicateDetector, DuplicateReport},
     vectorization::{CodeVector, CodeVectorizer},
 };
+use crate::parser::declarations::{Declaration, DeclarationType, item_to_declaration};
+use syn::{File, Item};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use syn_serde::json;
@@ -29,7 +30,6 @@ pub struct CodeMetrics {
 }
 
 pub struct CodeAnalyzer {
-    splitter: DeclarationSplitter,
     vectorizer: CodeVectorizer,
     duplicate_detector: DuplicateDetector,
 }
@@ -37,7 +37,6 @@ pub struct CodeAnalyzer {
 impl CodeAnalyzer {
     pub fn new(vector_dimensions: usize, similarity_threshold: f32) -> Self {
         Self {
-            splitter: DeclarationSplitter::new(),
             vectorizer: CodeVectorizer::new(vector_dimensions),
             duplicate_detector: DuplicateDetector::new(vector_dimensions, similarity_threshold),
         }
@@ -48,14 +47,16 @@ impl CodeAnalyzer {
         content: &str,
         file_path: String,
     ) -> Result<CodeAnalysis, Box<dyn std::error::Error>> {
-        // Parse and split declarations
-        self.splitter = DeclarationSplitter::new();
-        self.splitter.split_file(content, Some(file_path.clone()))?;
+        let syntax_tree = syn::parse_file(content)?;
+        let lines: Vec<&str> = content.lines().collect();
+        let declarations: Vec<Declaration> = syntax_tree
+            .items
+            .iter()
+            .filter_map(|item| item_to_declaration(item, &lines, Some(file_path.clone())))
+            .collect();
 
         // Generate vectors for each declaration
-        let vectors: Vec<CodeVector> = self
-            .splitter
-            .declarations
+        let vectors: Vec<CodeVector> = declarations
             .iter()
             .map(|decl| self.vectorizer.vectorize(&decl.content))
             .collect();
@@ -64,13 +65,13 @@ impl CodeAnalyzer {
         let json_ast = self.generate_json_ast(content)?;
 
         // Calculate metrics
-        let metrics = self.calculate_metrics(content, &self.splitter.declarations);
+        let metrics = self.calculate_metrics(content, &declarations);
 
         // Detect duplicates
-        let duplicate_report = if self.splitter.declarations.len() > 1 {
+        let duplicate_report = if declarations.len() > 1 {
             Some(
                 self.duplicate_detector
-                    .detect_duplicates(&self.splitter.declarations),
+                    .detect_duplicates(&declarations),
             )
         } else {
             None
@@ -78,7 +79,7 @@ impl CodeAnalyzer {
 
         Ok(CodeAnalysis {
             file_path,
-            declarations: self.splitter.declarations.clone(),
+            declarations,
             vectors,
             json_ast,
             duplicate_report,
