@@ -5,7 +5,7 @@ use crate::types::token::executable::ExecutableToken; // Import the trait
 use std::collections::HashMap;
 use std::iter::Peekable;
 use std::slice::Iter;
-
+use crate::types::token::emojis::add_token;
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -87,14 +87,7 @@ impl ExecutableToken for Token {
                 Ok(())
             },
             Token::Add => {
-                if stack.len() >= 2 {
-                    let b = stack.pop().unwrap();
-                    let a = stack.pop().unwrap();
-                    stack.push(a + b);
-                    Ok(())
-                } else {
-                    Err("Not enough operands for Add operation.".to_string())
-                }
+                add_token::execute_add(stack, locals, tokens_iter)
             },
             Token::Sub => {
                 if stack.len() >= 2 {
