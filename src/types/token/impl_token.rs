@@ -5,11 +5,11 @@ use crate::types::token::emojis; // Import the emojis module
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Token::Integer(i) => write!(f, "{}", i),
-            Token::Float(fl) => write!(f, "{}", fl),
-            Token::Word(s) => write!(f, "{}", s),
-            Token::Comment(s) => write!(f, "💬{}", s), // Comments are special
-            Token::Other(s) => write!(f, "{}", s),
+            Token::Integer(i) => write!(f, "{i}"),
+            Token::Float(fl) => write!(f, "{fl}"),
+            Token::Word(s) => write!(f, "{s}"),
+            Token::Comment(s) => write!(f, "💬{s}"), // Comments are special
+            Token::Other(s) => write!(f, "{s}"),
             Token::True => write!(f, "{}", emojis::true_token::EMOJI),
             Token::False => write!(f, "{}", emojis::false_token::EMOJI),
             Token::FuncStart => write!(f, "{}", emojis::func_start_token::EMOJI),

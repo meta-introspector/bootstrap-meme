@@ -2,6 +2,7 @@ use crate::types::token::Token;
 use crate::types::token::emojis;
 use std::collections::HashMap;
 
+
 fn build_token_map() -> HashMap<&'static str, Token> {
     let mut m = HashMap::new();
     // Prelude
@@ -184,6 +185,7 @@ pub fn tokenize(input: &str) -> Vec<Token> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f32::consts::PI; // Added here
 
     #[test]
     fn test_tokenize_simple() {
@@ -204,7 +206,7 @@ mod tests {
             Token::Integer(42),
             Token::Whitespace,
             Token::F32Const(0.0),
-            Token::Float(3.14),
+            Token::Float(consts::PI),
         ];
         assert_eq!(tokenize(input), expected);
     }
