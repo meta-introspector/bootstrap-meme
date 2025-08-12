@@ -152,7 +152,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                 lightning_token::execute_lightning(&mut stack, &mut locals, &mut tokens_iter)?;
             },
             Token::Comment(s) => {
-                comment_token::execute_comment(s, &mut stack, &mut locals, &mut tokens_iter)?;
+                comment_token::execute_comment(&s, &mut stack, &mut locals, &mut tokens_iter)?;
             },
             Token::Box => {
                 box_token::execute_box(&mut stack, &mut locals, &mut tokens_iter)?;

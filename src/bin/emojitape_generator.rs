@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Tokens: {tokens:#?}"); // For debugging token stream
 
     println!("Parsing Emojitape...");
-    let emojitape = parser::parse_emojitape(tokens);
+    let emojitape = parse_emojitape(tokens);
 
     // Now, implement the "small files" strategy.
     // For this iteration, I will simply print the structured Emojitape,

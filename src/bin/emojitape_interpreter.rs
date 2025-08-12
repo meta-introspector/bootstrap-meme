@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let tokens = tokenize(&emojitape_content);
         // println!("Tokens: {:?}", tokens); // For debugging
 
-        let emojitape = parser::parse_emojitape(tokens);
+        let emojitape = parse_emojitape(tokens);
         println!("Parsed Emojitape: {emojitape:?}"); // For debugging
 
         let rendered_emojitape = emojitape.render();

@@ -7,7 +7,7 @@ pub fn enum_to_declaration(
     file_path: Option<String>,
 ) -> Declaration {
     let name = item_enum.ident.to_string();
-    let (start, end) = get_span_lines(&item_enum.span());
+    let (start, end) = get_span_lines(item_enum);
     let content = extract_content(lines, start, end);
 
     Declaration {
@@ -20,8 +20,8 @@ pub fn enum_to_declaration(
     }
 }
 
-fn get_span_lines(span: &proc_macro2::Span) -> (usize, usize) {
-    (span.start().line, span.end().line)
+fn get_span_lines(spanned: &dyn Spanned) -> (usize, usize) {
+    (spanned.span().start().line, spanned.span().end().line)
 }
 
 fn extract_content(lines: &[&str], start: usize, end: usize) -> String {

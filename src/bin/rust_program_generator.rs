@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Parsing Emojitape...");
     let tokens = tokenize(&emojitape_content);
-    let emojitape = parser::parse_emojitape(tokens);
+    let emojitape = parse_emojitape(tokens);
 
     println!("Extracting generated WAT block...");
     let wat_block = emojitape
