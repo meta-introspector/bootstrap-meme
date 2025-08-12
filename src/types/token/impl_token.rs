@@ -307,8 +307,8 @@ impl ExecutableToken for Token {
             },
             Token::LocalSet => {
                 if stack.len() >= 2 {
-                    let index = stack.pop().unwrap();
-                    let value = stack.pop().unwrap();
+                    let value = stack.pop().unwrap(); // Pop value first
+                    let index = stack.pop().unwrap(); // Then pop index
                     locals.insert(index, value);
                     Ok(())
                 } else {
