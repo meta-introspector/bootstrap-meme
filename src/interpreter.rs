@@ -2,6 +2,7 @@
 
 use crate::types::emojitape::Emojitape;
 use crate::types::token::Token;
+use crate::types::rule::Rule;
 
 pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
     println!("Executing Emojitape...");
@@ -97,18 +98,62 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
 
     // Placeholder for apply_rules_loop
     if !emojitape.rules.is_empty() {
-        println!("\n--- Applying Rules (Conceptual) ---");
-        println!("Rules found, but apply_rules_loop is not yet implemented.");
+        println!("\n--- Applying Rules ---");
+        let mut current_tape = emojitape.world_tape.clone();
+        let mut changed = true;
+        while changed {
+            changed = false;
+            let mut next_tape = Vec::new();
+            for rule in &emojitape.rules {
+                let new_tape = match_and_replace(&current_tape, rule);
+                if new_tape != current_tape {
+                    changed = true;
+                    current_tape = new_tape;
+                    break; // Restart iteration over rules if a change occurred
+                }
+            }
+            // If no rule applied in a full pass, stop
+            if !changed {
+                next_tape = current_tape.clone();
+            }
+            current_tape = next_tape;
+        }
+        // Update world_tape with the result of rule application
+        // This might need to be handled differently depending on the semantics of rules
+        // For now, let's just print the result
+        println!("Rules applied. Final tape: {:?}", current_tape);
         println!("--- End Applying Rules ---");
     }
 
     // Placeholder for /zos export
     if !emojitape.zos_export_definition.is_empty() {
-        println!("\n--- /zos Export (Conceptual) ---");
-        println!("/zos export functionality is not yet implemented.");
+        println!("\n--- /zos Export ---");
+        // For now, let's just print the entire emojitape object to a file
+        let output_filename = "exported_emojitape.txt"; // Placeholder filename
+        match std::fs::write(output_filename, format!(r#"{:#?}"#, emojitape)) {
+            Ok(_) => println!("Emojitape exported to {}", output_filename),
+            Err(e) => println!("Error exporting emojitape: {}", e),
+        }
         println!("--- End /zos Export ---");
     }
 
     println!("\nEmojitape execution complete.");
     Ok(())
+}
+
+fn match_and_replace(target: &[Token], rule: &Rule) -> Vec<Token> {
+    let mut result = Vec::new();
+    let mut i = 0;
+    while i < target.len() {
+        if i + rule.pattern.len() <= target.len() && target[i..i + rule.pattern.len()] == rule.pattern[..] {
+            // Match found, append replacement
+            result.extend_from_slice(&rule.replacement);
+            i += rule.pattern.len(); // Advance past the matched pattern
+        } else {
+            // No match, append current token
+            result.push(target[i].clone());
+            i += 1;
+        }
+    }
+    result
 }
