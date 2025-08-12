@@ -6,6 +6,7 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Token::Integer(i) => write!(f, "{i}"),
+	    Token::Drop => write!(f, "Drop"),
             Token::Float(fl) => write!(f, "{fl}"),
             Token::Word(s) => write!(f, "{s}"),
             Token::Comment(s) => write!(f, "💬{s}"), // Comments are special

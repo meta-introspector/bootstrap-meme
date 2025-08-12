@@ -54,6 +54,7 @@ fn build_token_map() -> HashMap<&'static str, Token> {
     m.insert(emojis::local_set_token::EMOJI, emojis::local_set_token::to_token());
     m.insert(emojis::spawn_token_token::EMOJI, emojis::spawn_token_token::to_token());
     m.insert(emojis::emit_wat_block_token::EMOJI, emojis::emit_wat_block_token::to_token());
+    m.insert(emojis::emit_wat_block_token::ASCII_EQUIVALENT, emojis::emit_wat_block_token::to_token());
     m.insert(emojis::rule_entry_token::EMOJI, emojis::rule_entry_token::to_token()); // This will need special handling
     m.insert(emojis::apply_rules_loop_token::EMOJI, emojis::apply_rules_loop_token::to_token());
 
@@ -71,6 +72,7 @@ fn build_token_map() -> HashMap<&'static str, Token> {
     m.insert(emojis::i32_const_token::ASCII_EQUIVALENT, emojis::i32_const_token::to_token());
     m.insert(emojis::f32_const_token::EMOJI, emojis::f32_const_token::to_token());
     m.insert(emojis::f32_const_token::ASCII_EQUIVALENT, emojis::f32_const_token::to_token());
+    m.insert(emojis::drop_token::EMOJI, emojis::drop_token::to_token());
 
     m
 }

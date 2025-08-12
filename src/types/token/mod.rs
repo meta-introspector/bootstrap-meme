@@ -96,13 +96,16 @@ pub enum Token {
     SpawnToken, // 🍄
     #[strum(serialize = "💬")]
     Comment(String), // 💬
-    #[strum(serialize = "📦")]
-    EmitWatBlock, // 📦 (re-used for emit_wat_block)
+    #[strum(serialize = "🧱")]
+    EmitWatBlock, // 🧱 (re-used for emit_wat_block)
     #[strum(serialize = "🍃")] // Changed from (... ) to 🍃
     RuleEntry, // 🍃
     #[strum(serialize = "🔁🕳️.apply")] // Changed from ️.apply to 🔁🕳️.apply
     ApplyRulesLoop, // 🔁🕳️.apply
 
+    #[strum(serialize = "⚙️")] // Added strum attribute
+    Drop, // ⚙️
+    
     // World Tape
     Word(String), // Generic word token
     Integer(i32), // For i32.const
