@@ -10,6 +10,8 @@ wat = "1.0"
 fs_extra = "1.3.0"
 strum = "0.26"
 strum_macros = "0.26"
+syn = { version = "2.0.104", features = ["full", "parsing", "visit"] }
+quote = "1.0.40"
 
 [[bin]]
 name = "emojitape_interpreter"
@@ -22,3 +24,7 @@ path = "src/bin/emojitape_generator.rs"
 [[bin]]
 name = "rust_program_generator"
 path = "src/bin/rust_program_generator.rs"
+
+[[bin]]
+name = "main_conversion_demo"
+path = "src/main_conversion_demo.rs"
