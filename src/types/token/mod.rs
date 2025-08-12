@@ -76,8 +76,8 @@ pub enum Token {
     // WASM Compiler Prelude (conceptual)
     #[strum(serialize = "⚗️")]
     Compiler, // ⚗️
-    #[strum(serialize = "⚙️")]
-    Optimizer, // ⚙️
+    #[strum(serialize = "🪄")]
+    Optimizer, // 🪄
     #[strum(serialize = "📦")]
     Box, // 📦
     #[strum(serialize = "🛡️")]

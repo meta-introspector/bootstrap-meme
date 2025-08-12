@@ -26,7 +26,7 @@ fn test_render() {
     // Assertions for WASM Compiler Prelude
     assert!(rendered.contains("💬--- WASM COMPILER PRELUDE\n"));
     assert!(rendered.contains("⚗️"));
-    assert!(rendered.contains("⚙️"));
+    assert!(rendered.contains("🪄"));
 
     // Assertions for World Tape
     assert!(rendered.contains("💬--- WORLD TAPE\n"));
@@ -35,7 +35,7 @@ fn test_render() {
 
     // Assertions for Generated WAT Block (this will also test EmitWatBlock and Other)
     assert!(rendered.contains("💬--- GENERATED WAT BLOCK\n"));
-    assert!(rendered.contains("📦"));
+    assert!(rendered.contains("🧱"));
     assert!(rendered.contains("some_wat"));
 
     // Assertions for Clues & Keys

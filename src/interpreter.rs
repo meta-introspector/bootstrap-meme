@@ -101,7 +101,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
             Token::I => {
                 // I x = x
                 // Requires at least 1 operand on the stack: x
-                if stack.len() >= 1 {
+                if !stack.is_empty() {
                     let x = stack.pop().unwrap();
                     stack.push(x);
                 } else {
@@ -127,7 +127,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                 }
             },
             Token::Not => {
-                if stack.len() >= 1 {
+                if !stack.is_empty() {
                     let a = stack.pop().unwrap();
                     stack.push(if a == 0 { 1 } else { 0 });
                 } else {
@@ -180,12 +180,12 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                 }
             },
             Token::LocalGet => {
-                if stack.len() >= 1 {
+                if !stack.is_empty() {
                     let index = stack.pop().unwrap();
                     if let Some(&value) = locals.get(&index) {
                         stack.push(value);
                     } else {
-                        return Err(format!("Local variable at index {} not found.", index));
+                        return Err(format!("Local variable at index {index} not found."));
                     }
                 } else {
                     return Err("Not enough operands for LocalGet operation.".to_string());
@@ -201,24 +201,24 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                 }
             },
             Token::Call => {
-                if stack.len() >= 1 {
+                if !stack.is_empty() {
                     let func_id = stack.pop().unwrap();
                     match func_id {
                         0 => { // Example: print top of stack
                             if let Some(value) = stack.pop() {
-                                println!("Call (func_id 0): {}", value);
+                                println!("Call (func_id 0): {value}");
                             } else {
                                 return Err("Stack empty for print function.".to_string());
                             }
                         },
-                        _ => return Err(format!("Unknown function ID: {}", func_id)),
+                        _ => return Err(format!("Unknown function ID: {func_id}")),
                     }
                 } else {
                     return Err("Not enough operands for Call operation.".to_string());
                 }
             },
             Token::Drop => {
-                if stack.len() >= 1 {
+                if !stack.is_empty() {
                     stack.pop();
                 } else {
                     return Err("Not enough operands for Drop operation.".to_string());
@@ -280,7 +280,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
         // Update world_tape with the result of rule application
         // This might need to be handled differently depending on the semantics of rules
         // For now, let's just print the result
-        println!("Rules applied. Final tape: {:?}", current_tape);
+        println!("Rules applied. Final tape: {current_tape:?}");
         println!("--- End Applying Rules ---");
     }
 
@@ -289,9 +289,9 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
         println!("\n--- /zos Export ---");
         // For now, let's just print the entire emojitape object to a file
         let output_filename = "exported_emojitape.txt"; // Placeholder filename
-        match std::fs::write(output_filename, format!(r#"{:#?}"#, emojitape)) {
-            Ok(_) => println!("Emojitape exported to {}", output_filename),
-            Err(e) => println!("Error exporting emojitape: {}", e),
+        match std::fs::write(output_filename, format!(r#"{emojitape:#?}"#)) {
+            Ok(_) => println!("Emojitape exported to {output_filename}"),
+            Err(e) => println!("Error exporting emojitape: {e}"),
         }
         println!("--- End /zos Export ---");
     }
