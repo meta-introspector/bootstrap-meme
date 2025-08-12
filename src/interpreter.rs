@@ -3,6 +3,7 @@
 use crate::types::emojitape::Emojitape;
 use crate::types::token::Token;
 use crate::types::rule::Rule;
+use std::collections::HashMap;
 
 pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
     println!("Executing Emojitape...");
@@ -12,6 +13,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
     // Execute World Tape
     println!("\n--- World Tape Execution ---");
     let mut stack: Vec<i32> = Vec::new();
+    let mut locals: HashMap<i32, i32> = HashMap::new();
     for token in &emojitape.world_tape {
         match token {
             Token::Integer(i) => stack.push(*i),
@@ -175,6 +177,44 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                     stack.push(if a == b { 1 } else { 0 }); // For now, identical is same as equals
                 } else {
                     return Err("Not enough operands for Identical operation.".to_string());
+                }
+            },
+            Token::LocalGet => {
+                if stack.len() >= 1 {
+                    let index = stack.pop().unwrap();
+                    if let Some(&value) = locals.get(&index) {
+                        stack.push(value);
+                    } else {
+                        return Err(format!("Local variable at index {} not found.", index));
+                    }
+                } else {
+                    return Err("Not enough operands for LocalGet operation.".to_string());
+                }
+            },
+            Token::LocalSet => {
+                if stack.len() >= 2 {
+                    let index = stack.pop().unwrap();
+                    let value = stack.pop().unwrap();
+                    locals.insert(index, value);
+                } else {
+                    return Err("Not enough operands for LocalSet operation.".to_string());
+                }
+            },
+            Token::Call => {
+                if stack.len() >= 1 {
+                    let func_id = stack.pop().unwrap();
+                    match func_id {
+                        0 => { // Example: print top of stack
+                            if let Some(value) = stack.pop() {
+                                println!("Call (func_id 0): {}", value);
+                            } else {
+                                return Err("Stack empty for print function.".to_string());
+                            }
+                        },
+                        _ => return Err(format!("Unknown function ID: {}", func_id)),
+                    }
+                } else {
+                    return Err("Not enough operands for Call operation.".to_string());
                 }
             },
             // Handle other tokens as needed
