@@ -79,61 +79,76 @@ pub fn parse_emojitape(tokens_vec: Vec<Token>) -> Emojitape {
                         }
                     },
                     "rules" => {
-                        if matches!(token, Token::Newline | Token::Whitespace) {
-                            continue;
-                        }
+                        let mut current_rule_pattern: Vec<Token> = Vec::new();
+                        let mut current_rule_replacement: Vec<Token> = Vec::new();
+                        let mut parsing_pattern = true;
 
-                        if matches!(token, Token::RuleEntry) {
-                            let mut pattern_tokens = Vec::new();
-                            let mut replacement_tokens = Vec::new();
-                            let mut parsing_pattern = true;
+                        // Loop until the end of the rules section or end of tokens
+                        loop {
+                            // Peek the next token to decide what to do
+                            let peeked_token_opt = tokens.peek();
 
-                            loop {
-                                let next_token_opt = tokens.peek();
-
-                                match next_token_opt {
-                                    Some(peeked_token) => {
-                                        if matches!(peeked_token, Token::RuleEntry) {
-                                            break;
-                                        }
-                                        if let Token::Comment(comment_text) = peeked_token {
-                                            if comment_text.contains("---") {
-                                                break;
+                            match peeked_token_opt {
+                                Some(peeked_token) => {
+                                    // Check for end of section
+                                    if let Token::Comment(comment_text) = peeked_token {
+                                        if comment_text.contains("---") {
+                                            // If we have a partial rule, push it before breaking
+                                            if !current_rule_pattern.is_empty() || !current_rule_replacement.is_empty() {
+                                                emojitape.rules.push(Rule {
+                                                    name: None,
+                                                    pattern: current_rule_pattern.clone(),
+                                                    replacement: current_rule_replacement.clone(),
+                                                });
                                             }
+                                            break; // End of rules section
                                         }
-
-                                        if matches!(peeked_token, Token::Newline | Token::Whitespace) {
-                                            tokens.next();
-                                            continue;
-                                        } else if matches!(peeked_token, Token::FuncStart) { // Changed from Token::Return
-                                            parsing_pattern = false;
-                                            tokens.next();
-                                            continue;
-                                        } else {
-                                            let consumed_token = tokens.next().unwrap();
-                                            if parsing_pattern {
-                                                pattern_tokens.push(consumed_token);
-                                            } else {
-                                                replacement_tokens.push(consumed_token);
-                                            }
-                                        }
-                                    },
-                                    None => {
-                                        break;
                                     }
+
+                                    // Check for RuleEntry (🍃) - signifies a new rule
+                                    if matches!(peeked_token, Token::RuleEntry) {
+                                        // If we have a partial rule, push it before starting a new one
+                                        if !current_rule_pattern.is_empty() || !current_rule_replacement.is_empty() {
+                                            emojitape.rules.push(Rule {
+                                                name: None,
+                                                pattern: current_rule_pattern.clone(),
+                                                replacement: current_rule_replacement.clone(),
+                                            });
+                                            current_rule_pattern.clear();
+                                            current_rule_replacement.clear();
+                                            parsing_pattern = true;
+                                        }
+                                        tokens.next(); // Consume RuleEntry
+                                        continue; // Continue to parse the next token as part of the new rule
+                                    }
+
+                                    // Handle separator (->)
+                                    if matches!(peeked_token, Token::FuncStart) {
+                                        parsing_pattern = false;
+                                        tokens.next(); // Consume FuncStart
+                                        continue;
+                                    }
+
+                                    // Consume the token and add to pattern or replacement
+                                    let consumed_token = tokens.next().unwrap();
+                                    if parsing_pattern {
+                                        current_rule_pattern.push(consumed_token);
+                                    } else {
+                                        current_rule_replacement.push(consumed_token);
+                                    }
+                                },
+                                None => {
+                                    // End of tokens - push any partial rule and break
+                                    if !current_rule_pattern.is_empty() || !current_rule_replacement.is_empty() {
+                                        emojitape.rules.push(Rule {
+                                            name: None,
+                                            pattern: current_rule_pattern.clone(),
+                                            replacement: current_rule_replacement.clone(),
+                                        });
+                                    }
+                                    break; // End of tokens
                                 }
                             }
-                            emojitape.rules.push(Rule {
-                                name: None,
-                                pattern: pattern_tokens,
-                                replacement: replacement_tokens,
-                            });
-                        } else {
-                            emojitape.rules.push(Rule {
-                                name: None,
-                                pattern: vec![token.clone()],
-                                replacement: Vec::new(),
-                            });
                         }
                     },
                     "world_tape" => {
