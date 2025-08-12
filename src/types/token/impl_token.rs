@@ -46,7 +46,7 @@ impl Token {
             Token::LocalGet => "📥".to_string(),
             Token::LocalSet => "📤".to_string(),
             Token::SpawnToken => "🌱".to_string(),
-            Token::Comment(s) => format!("💬{{s}}"),
+            Token::Comment(s) => format!("💬{s}"),
             Token::EmitWatBlock => "EmitWatBlock".to_string(), // Placeholder
             Token::RuleEntry => "(… )".to_string(),
             Token::ApplyRulesLoop => ".apply".to_string(),

@@ -1,8 +1,9 @@
 use emojitape_interpreter::parser;
-use emojitape_interpreter::types::emojitape::Emojitape;
-use emojitape_interpreter::types::token::Token;
+//use emojitape_interpreter::types::emojitape::Emojitape;
+//use emojitape_interpreter::types::token::Token;
 use std::fs;
-use std::io::{self, Read};
+//use std::io::{self, Read};
+use std::io::Read;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_path = "./bootstrap.txt"; // Path to the combined text file
