@@ -14,14 +14,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_path = &args[1];
     let output_path = &args[2];
 
-    println!("Reading combined text from: {}", input_path);
+    println!("Reading combined text from: {input_path}");
     let mut file = fs::File::open(input_path)?;
     let mut combined_text = String::new();
     file.read_to_string(&mut combined_text)?;
 
     println!("Tokenizing combined text...");
     let tokens = tokenize(&combined_text);
-    println!("Tokens: {:#?}", tokens); // For debugging token stream
+    println!("Tokens: {tokens:#?}"); // For debugging token stream
 
     println!("Parsing Emojitape...");
     let emojitape = parser::parse_emojitape(tokens);
@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Optionally, write the full emojitape debug output to a file for inspection
     fs::write(output_path, emojitape.render())?;
-    println!("Full Emojitape output written to: {}", output_path);
+    println!("Full Emojitape output written to: {output_path}");
 
     Ok(())
 }

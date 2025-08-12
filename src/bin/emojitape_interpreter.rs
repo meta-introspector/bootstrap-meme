@@ -19,15 +19,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut emojitape_content = String::new();
     file.read_to_string(&mut emojitape_content)?;
 
-    println!("Parsing Emojitape from: {}", emojitape_path);
+    println!("Parsing Emojitape from: {emojitape_path}");
     let tokens = tokenize(&emojitape_content);
     // println!("Tokens: {:?}", tokens); // For debugging
 
     let emojitape = parser::parse_emojitape(tokens);
-    println!("Parsed Emojitape: {:?}", emojitape); // For debugging
+    println!("Parsed Emojitape: {emojitape:?}"); // For debugging
 
     let rendered_emojitape = emojitape.render();
-    println!("\n--- Rendered Emojitape ---\n{}", rendered_emojitape);
+    println!("\n--- Rendered Emojitape ---\n{rendered_emojitape}");
 
     interpreter::execute_emojitape(&emojitape)?;
 

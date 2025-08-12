@@ -49,3 +49,4 @@ pub mod div_s_token;
 pub mod gt_s_token;
 pub mod zos_export_token;
 pub mod zos_ready_token;
+pub mod newline_token;

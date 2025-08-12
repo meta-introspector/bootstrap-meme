@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let emojitape_path = &args[1];
     let output_dir = &args[2];
 
-    println!("Reading Emojitape from: {}", emojitape_path);
+    println!("Reading Emojitape from: {emojitape_path}");
     let mut file = fs::File::open(emojitape_path)?;
     let mut emojitape_content = String::new();
     file.read_to_string(&mut emojitape_content)?;
@@ -31,11 +31,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|token| token.to_string())
         .collect::<String>();
 
-    println!("Generating Rust project in {}...", output_dir);
+    println!("Generating Rust project in {output_dir}...");
     rust_project::create_project_structure(output_dir)?;
     main_rs::generate_main_rs(output_dir, &wat_block)?;
 
-    println!("Successfully generated Rust project in `{}` directory!", output_dir);
+    println!("Successfully generated Rust project in `{output_dir}` directory!");
 
     Ok(())
 }

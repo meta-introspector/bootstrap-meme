@@ -66,7 +66,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
             Token::Whitespace => {}, // Ignore whitespace in execution
             // Handle other tokens as needed
             _ => {
-                return Err(format!("Unhandled token in World Tape: {:?}", token));
+                return Err(format!("Unhandled token in World Tape: {token:?}"));
             } // Placeholder for other tokens
         }
     }
@@ -76,7 +76,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
         actual_output = result.to_string();
     }
     
-    println!("{}", actual_output); // Print the captured output
+    println!("{actual_output}"); // Print the captured output
     println!("\n--- End World Tape Execution ---");
 
     // Test Spec Validation
@@ -88,22 +88,22 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
             println!("✅ Test Passed: Actual output matches expected output.");
         } else {
             println!("❌ Test Failed:");
-            println!("  Expected: \"{}\"", trimmed_expected);
-            println!("  Actual:   \"{}\"", trimmed_actual);
+            println!("  Expected: \"{trimmed_expected}\"");
+            println!("  Actual:   \"{trimmed_actual}\"");
         }
         println!("--- End Test Spec Validation ---");
     }
 
 
     // Placeholder for apply_rules_loop
-    if emojitape.rules.len() > 0 {
+    if !emojitape.rules.is_empty() {
         println!("\n--- Applying Rules (Conceptual) ---");
         println!("Rules found, but apply_rules_loop is not yet implemented.");
         println!("--- End Applying Rules ---");
     }
 
     // Placeholder for /zos export
-    if emojitape.zos_export_definition.len() > 0 {
+    if !emojitape.zos_export_definition.is_empty() {
         println!("\n--- /zos Export (Conceptual) ---");
         println!("/zos export functionality is not yet implemented.");
         println!("--- End /zos Export ---");
