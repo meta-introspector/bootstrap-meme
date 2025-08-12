@@ -224,6 +224,12 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                     return Err("Not enough operands for Drop operation.".to_string());
                 }
             },
+            Token::True => {
+                stack.push(1);
+            },
+            Token::False => {
+                stack.push(0);
+            },
             // Handle other tokens as needed
             _ => {
                 return Err(format!("Unhandled token in World Tape: {token:?}"));
