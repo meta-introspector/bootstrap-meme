@@ -1,0 +1,104 @@
+use super::Token;
+use std::fmt;
+use std::str::FromStr; // Import FromStr
+use crate::types::token::emojis; // Import the emojis module
+use strum::IntoEnumIterator; // Import IntoEnumIterator for Token::iter()
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Token::Integer(i) => write!(f, "{i}"),
+	    Token::Drop => write!(f, "{}", emojis::drop_token::EMOJI),
+            Token::Float(fl) => write!(f, "{fl}"),
+            Token::Word(s) => write!(f, "{s}"),
+            Token::Comment(s) => write!(f, "💬{s}"), // Comments are special
+            Token::Other(s) => write!(f, "{s}"),
+            Token::True => write!(f, "{}", emojis::true_token::EMOJI),
+            Token::False => write!(f, "{}", emojis::false_token::EMOJI),
+            Token::FuncStart => write!(f, "{}", emojis::func_start_token::EMOJI),
+            Token::Forall => write!(f, "{}", emojis::forall_token::EMOJI),
+            Token::Exists => write!(f, "{}", emojis::exists_token::EMOJI),
+            Token::UpArrow => write!(f, "{}", emojis::up_arrow_token::EMOJI),
+            Token::And => write!(f, "{}", emojis::and_token::EMOJI),
+            Token::Or => write!(f, "{}", emojis::or_token::EMOJI),
+            Token::Not => write!(f, "{}", emojis::not_token::EMOJI),
+            Token::Implies => write!(f, "{}", emojis::implies_token::EMOJI),
+            Token::Iff => write!(f, "{}", emojis::iff_token::EMOJI),
+            Token::S => write!(f, "{}", emojis::s_token::EMOJI),
+            Token::K => write!(f, "{}", emojis::k_token::EMOJI),
+            Token::I => write!(f, "{}", emojis::i_token::EMOJI),
+            Token::Sparkle => write!(f, "{}", emojis::sparkle_token::EMOJI),
+            Token::I32Const(_) => write!(f, "{}", emojis::i32_const_token::EMOJI),
+            Token::Lightning => write!(f, "{}", emojis::lightning_token::EMOJI),
+            Token::F32Const(_) => write!(f, "{}", emojis::f32_const_token::EMOJI),
+            Token::B => write!(f, "{}", emojis::b_token::EMOJI),
+            Token::C => write!(f, "{}", emojis::c_token::EMOJI),
+            Token::W => write!(f, "{}", emojis::w_token::EMOJI),
+            Token::Y => write!(f, "{}", emojis::y_token::EMOJI),
+            Token::Z => write!(f, "{}", emojis::z_token::EMOJI),
+            Token::Omega => write!(f, "{}", emojis::omega_token::EMOJI),
+            Token::Lambda => write!(f, "{}", emojis::lambda_token::EMOJI),
+            Token::Top => write!(f, "{}", emojis::top_token::EMOJI),
+            Token::Bottom => write!(f, "{}", emojis::bottom_token::EMOJI),
+            Token::MapsTo => write!(f, "{}", emojis::maps_to_token::EMOJI),
+            Token::Compose => write!(f, "{}", emojis::compose_token::EMOJI),
+            Token::Equals => write!(f, "{}", emojis::equals_token::EMOJI),
+            Token::NotEquals => write!(f, "{}", emojis::not_equals_token::EMOJI),
+            Token::Identical => write!(f, "{}", emojis::identical_token::EMOJI),
+            Token::Proves => write!(f, "{}", emojis::proves_token::EMOJI),
+            Token::Entails => write!(f, "{}", emojis::entails_token::EMOJI),
+            Token::Compiler => write!(f, "{}", emojis::compiler_token::EMOJI),
+            Token::Optimizer => write!(f, "{}", emojis::optimizer_token::EMOJI),
+            Token::Box => write!(f, "{}", emojis::box_token::EMOJI),
+            Token::CheckTrap => write!(f, "{}", emojis::check_trap_token::EMOJI),
+            Token::Return => write!(f, "{}", emojis::return_token::EMOJI),
+            Token::Call => write!(f, "{}", emojis::call_token::EMOJI),
+            Token::LocalGet => write!(f, "{}", emojis::local_get_token::EMOJI),
+            Token::LocalSet => write!(f, "{}", emojis::local_set_token::EMOJI),
+            Token::SpawnToken => write!(f, "{}", emojis::spawn_token_token::EMOJI),
+            Token::EmitWatBlock => write!(f, "{}", emojis::emit_wat_block_token::EMOJI),
+            Token::RuleEntry => write!(f, "{}", emojis::rule_entry_token::EMOJI),
+            Token::ApplyRulesLoop => write!(f, "{}", emojis::apply_rules_loop_token::EMOJI),
+            Token::Add => write!(f, "{}", emojis::add_token::EMOJI),
+            Token::Sub => write!(f, "{}", emojis::sub_token::EMOJI),
+            Token::Mul => write!(f, "{}", emojis::mul_token::EMOJI),
+            Token::DivS => write!(f, "{}", emojis::div_s_token::EMOJI),
+            Token::GtS => write!(f, "{}", emojis::gt_s_token::EMOJI),
+            Token::ZosExport => write!(f, "{}", emojis::zos_export_token::EMOJI),
+            Token::ZosReady => write!(f, "{}", emojis::zos_ready_token::EMOJI),
+            Token::Newline => write!(f, "{}", emojis::newline_token::EMOJI),
+            Token::Whitespace => write!(f, "{}", emojis::whitespace_token::EMOJI), // Whitespace is a space
+        }
+    }
+}
+
+impl FromStr for Token {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Try parsing as a simple enum variant first using strum's iterator
+        for variant in Token::iter() {
+            if variant.to_string() == s {
+                return Ok(variant);
+            }
+        }
+
+        // Try parsing as Integer
+        if let Ok(i) = s.parse::<i32>() {
+            return Ok(Token::Integer(i));
+        }
+
+        // Try parsing as Float
+        if let Ok(f) = s.parse::<f32>() {
+            return Ok(Token::Float(f));
+        }
+
+        // Try parsing as Comment
+        if s.starts_with("💬") {
+            return Ok(Token::Comment(s[4..].to_string())); // Skip "💬" (4 bytes)
+        }
+
+        // If nothing matched, it's an unknown token
+        Err(format!("Unknown token: {}", s))
+    }
+}
