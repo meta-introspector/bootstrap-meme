@@ -10,7 +10,7 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Token::Integer(i) => write!(f, "{i}"),
-	    Token::Drop => write!(f, "Drop"),
+	    Token::Drop => write!(f, "{}", emojis::drop_token::EMOJI),
             Token::Float(fl) => write!(f, "{fl}"),
             Token::Word(s) => write!(f, "{s}"),
             Token::Comment(s) => write!(f, "💬{s}"), // Comments are special
@@ -69,7 +69,7 @@ impl fmt::Display for Token {
             Token::ZosExport => write!(f, "{}", emojis::zos_export_token::EMOJI),
             Token::ZosReady => write!(f, "{}", emojis::zos_ready_token::EMOJI),
             Token::Newline => write!(f, "{}", emojis::newline_token::EMOJI),
-            Token::Whitespace => write!(f, " "), // Whitespace is a space
+            Token::Whitespace => write!(f, "{}", emojis::whitespace_token::EMOJI), // Whitespace is a space
         }
     }
 }
