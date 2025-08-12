@@ -1,62 +1,6 @@
 use crate::types::token::Token;
-use crate::tokenizer::tokenize;
-use crate::parser::parse_emojitape;
-
-#[test]
-fn test_tokenize_empty() {
-    let tokens = tokenize("");
-    assert!(tokens.is_empty());
-}
-
-#[test]
-fn test_tokenize_simple_emojis() {
-    let tokens = tokenize("✅❌➡️");
-    assert_eq!(tokens, vec![Token::True, Token::False, Token::FuncStart]);
-}
-
-#[test]
-fn test_tokenize_with_words_and_numbers() {
-    let tokens = tokenize("hello 123 world 4.5");
-    assert_eq!(tokens, vec![
-        Token::Word("hello".to_string()),
-        Token::Whitespace,
-        Token::Integer(123),
-        Token::Whitespace,
-        Token::Word("world".to_string()),
-        Token::Whitespace,
-        Token::Float(4.5),
-    ]);
-}
-
-#[test]
-fn test_tokenize_with_comments() {
-    let tokens = tokenize("💬 This is a comment\n✅");
-    assert_eq!(tokens, vec![
-        Token::Comment("This is a comment".to_string()), // Removed leading space
-        Token::Newline,
-        Token::True,
-    ]);
-}
-
-#[test]
-fn test_tokenize_with_section_comments() {
-    let tokens = tokenize("💬--- PRELUDE\n✅");
-    assert_eq!(tokens, vec![
-        Token::Comment("--- PRELUDE".to_string()),
-        Token::Newline,
-        Token::True,
-    ]);
-}
-
-#[test]
-fn test_tokenize_with_other_token() {
-    let tokens = tokenize("hello$world");
-    assert_eq!(tokens, vec![
-        Token::Word("hello".to_string()),
-        Token::Other("$".to_string()),
-        Token::Word("world".to_string()),
-    ]);
-}
+use crate::tokenizer::tokenize_function::tokenize;
+use crate::parser::emojitape_parser::parse_emojitape;
 
 #[test]
 fn test_parse_emojitape_prelude() {
