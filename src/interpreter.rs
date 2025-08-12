@@ -257,6 +257,9 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                 }
             },
             Token::Comment(_) => {}, // Ignore comments in execution
+            Token::Box => {
+                println!("Box (📦) token encountered. This signifies a WAT block or WASM binary emission.");
+            },
             // Handle other tokens as needed
             _ => {
                 return Err(format!("Unhandled token in World Tape: {token:?}"));
