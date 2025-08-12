@@ -14,7 +14,9 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
     println!("\n--- World Tape Execution ---");
     let mut stack: Vec<i32> = Vec::new();
     let mut locals: HashMap<i32, i32> = HashMap::new();
-    for token in &emojitape.world_tape {
+    let mut tokens_iter = emojitape.world_tape.iter().peekable();
+
+    while let Some(token) = tokens_iter.next() {
         match token {
             Token::Integer(i) => stack.push(*i),
             Token::Add => {
@@ -229,6 +231,30 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
             },
             Token::False => {
                 stack.push(0);
+            },
+            Token::Sparkle => {
+                // Expect next token to be an Integer
+                if let Some(next_token) = tokens_iter.next() {
+                    if let Token::Integer(i) = next_token {
+                        stack.push(*i);
+                    } else {
+                        return Err(format!("Expected Integer after Sparkle, got {next_token:?}"));
+                    }
+                } else {
+                    return Err("Expected Integer after Sparkle, but found end of tape.".to_string());
+                }
+            },
+            Token::Lightning => {
+                // Expect next token to be a Float
+                if let Some(next_token) = tokens_iter.next() {
+                    if let Token::Float(f) = next_token {
+                        stack.push(*f as i32); // Convert float to int for stack
+                    } else {
+                        return Err(format!("Expected Float after Lightning, got {next_token:?}"));
+                    }
+                } else {
+                    return Err("Expected Float after Lightning, but found end of tape.".to_string());
+                }
             },
             // Handle other tokens as needed
             _ => {
