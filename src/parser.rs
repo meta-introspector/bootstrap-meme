@@ -96,7 +96,7 @@ pub fn tokenize(input: &str) -> Vec<Token> {
             tokens.push(Token::Newline);
         } else if matched_str.trim().is_empty() { 
             tokens.push(Token::Whitespace);
-        } else if let Some(token_type) = TOKEN_MAP.get(matched_str) {
+        } else if let Some(token_type) = (*TOKEN_MAP).get(matched_str) {
             tokens.push(token_type.clone());
         } else if let Ok(i) = matched_str.parse::<i32>() {
             tokens.push(Token::Integer(i));
