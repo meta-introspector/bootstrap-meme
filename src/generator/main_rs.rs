@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::Path;
 
-pub fn generate_main_rs(wat_block: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let project_dir = Path::new("generated_project");
+pub fn generate_main_rs(output_dir: &str, wat_block: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let project_dir = Path::new(output_dir);
     let template_path = Path::new("src/generator/main.rs.template");
 
     let template_content = fs::read_to_string(template_path)?;

@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::Path;
 
-pub fn create_project_structure() -> Result<(), Box<dyn std::error::Error>> {
-    let project_dir = Path::new("generated_project");
+pub fn create_project_structure(output_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let project_dir = Path::new(output_dir);
     if project_dir.exists() {
         fs::remove_dir_all(project_dir)?;
     }

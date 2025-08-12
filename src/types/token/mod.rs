@@ -1,7 +1,9 @@
 pub mod emojis;
 pub mod impl_token;
 
-#[derive(Debug, PartialEq, Clone)]
+use strum_macros::Display;
+
+#[derive(Debug, PartialEq, Clone, Display)]
 pub enum Token {
     // Prelude
     True, // ✅

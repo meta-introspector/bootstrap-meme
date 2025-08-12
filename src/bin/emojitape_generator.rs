@@ -1,12 +1,18 @@
 use emojitape_interpreter::parser;
-//use emojitape_interpreter::types::emojitape::Emojitape;
-//use emojitape_interpreter::types::token::Token;
 use std::fs;
-//use std::io::{self, Read};
+use emojitape_interpreter::tokenizer::tokenize;
 use std::io::Read;
+use std::env;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let input_path = "./bootstrap.txt"; // Path to the combined text file
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 3 {
+        eprintln!("Usage: {} <input_text_file> <output_emojitape_file>", args[0]);
+        return Err("Missing arguments: input_text_file and output_emojitape_file are required.".into());
+    }
+
+    let input_path = &args[1];
+    let output_path = &args[2];
 
     println!("Reading combined text from: {}", input_path);
     let mut file = fs::File::open(input_path)?;
@@ -14,7 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     file.read_to_string(&mut combined_text)?;
 
     println!("Tokenizing combined text...");
-    let tokens = parser::tokenize(&combined_text);
+    let tokens = tokenize(&combined_text);
     println!("Tokens: {:#?}", tokens); // For debugging token stream
 
     println!("Parsing Emojitape...");
@@ -39,9 +45,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n--- End Generated Emojitape Structure ---");
 
     // Optionally, write the full emojitape debug output to a file for inspection
-    let full_output_path = "full_generated_emojitape.emojitape";
-    fs::write(full_output_path, emojitape.render())?;
-    println!("Full Emojitape output written to: {}", full_output_path);
+    fs::write(output_path, emojitape.render())?;
+    println!("Full Emojitape output written to: {}", output_path);
 
     Ok(())
 }
