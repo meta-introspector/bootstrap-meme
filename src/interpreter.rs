@@ -256,6 +256,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                     return Err("Expected Float after Lightning, but found end of tape.".to_string());
                 }
             },
+            Token::Comment(_) => {}, // Ignore comments in execution
             // Handle other tokens as needed
             _ => {
                 return Err(format!("Unhandled token in World Tape: {token:?}"));
