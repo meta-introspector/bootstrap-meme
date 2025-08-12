@@ -39,28 +39,20 @@ use crate::types::token::emojis::not_equals_token;
 use crate::types::token::emojis::identical_token;
 //use crate::types::token::emojis::proves_token;
 //use crate::types::token::emojis::entails_token;
-use crate::types::token::emojis::compiler_token;
 //use crate::types::token::emojis::optimizer_token;
 use crate::types::token::emojis::box_token;
 //use crate::types::token::emojis::check_trap_token;
-use crate::types::token::emojis::return_token;
 use crate::types::token::emojis::call_token;
 use crate::types::token::emojis::local_get_token;
 use crate::types::token::emojis::local_set_token;
-use crate::types::token::emojis::spawn_token_token;
 use crate::types::token::emojis::emit_wat_block_token;
-use crate::types::token::emojis::rule_entry_token;
-use crate::types::token::emojis::apply_rules_loop_token;
 use crate::types::token::emojis::add_token;
 use crate::types::token::emojis::sub_token;
 use crate::types::token::emojis::mul_token;
 use crate::types::token::emojis::div_s_token;
 use crate::types::token::emojis::gt_s_token;
-use crate::types::token::emojis::zos_export_token;
-use crate::types::token::emojis::zos_ready_token;
 use crate::types::token::emojis::newline_token;
 use crate::types::token::emojis::i32_const_token;
-use crate::types::token::emojis::f32_const_token;
 use crate::types::token::emojis::whitespace_token;
 use crate::types::token::emojis::comment_token;
 use crate::types::token::emojis::unhandled_token;
@@ -171,12 +163,12 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
             _ => {
                 unhandled_token::execute_unhandled_token(token, &mut stack, &mut locals, &mut tokens_iter)?;
             }
-            Token::EmitWatBlock => {
-                emit_wat_block_token::execute_emit_wat_block(&mut stack, &mut locals, &mut tokens_iter)?;
-            },
-            _ => {
-                unhandled_token::execute_unhandled_token(token, &mut stack, &mut locals, &mut tokens_iter)?;
-            }
+            //Token::EmitWatBlock => {
+//                emit_wat_block_token::execute_emit_wat_block(&mut stack, &mut locals, &mut tokens_iter)?;
+//            },
+            //_ => {
+//                unhandled_token::execute_unhandled_token(token, &mut stack, &mut locals, &mut tokens_iter)?;
+//            }
         }
     }
 
