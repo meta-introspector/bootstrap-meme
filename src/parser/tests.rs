@@ -84,7 +84,7 @@ fn test_parse_emojitape_rules() {
         Token::Integer(1),
         Token::Integer(1),
         Token::Add,
-        Token::Return, // ↩️
+                    Token::FuncStart, // ➡️
         Token::Integer(2),
         Token::Comment("--- WORLD TAPE".to_string()),
     ];

@@ -105,7 +105,7 @@ pub fn parse_emojitape(tokens_vec: Vec<Token>) -> Emojitape {
                                         if matches!(peeked_token, Token::Newline | Token::Whitespace) {
                                             tokens.next();
                                             continue;
-                                        } else if matches!(peeked_token, Token::Return) {
+                                        } else if matches!(peeked_token, Token::FuncStart) { // Changed from Token::Return
                                             parsing_pattern = false;
                                             tokens.next();
                                             continue;
