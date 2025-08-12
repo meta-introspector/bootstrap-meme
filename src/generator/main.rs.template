@@ -1,0 +1,10 @@
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let wat_str = r#"{{WAT_BLOCK}}"#;
+    println!("--- Parsing WAT ---");
+    let wasm_binary = wat::parse_str(wat_str)?;
+    println!("--- WAT Parsed Successfully ---");
+    let output_path = "module.wasm";
+    std::fs::write(output_path, wasm_binary)?;
+    println!("--- WASM binary written to {} ---", output_path);
+    Ok(())
+}
