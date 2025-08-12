@@ -1,43 +1,67 @@
-# KitKat Break: Strategic Plan for Rust Program Generation
+# KitKat Plan: Emoji Refactoring and Semantic Network Building
 
-## 1. Current Situation
+## Current Refactoring Status
+The `execute_emojitape` function in `src/interpreter.rs` is being refactored to delegate token execution to individual `execute_` functions within their respective `src/types/token/emojis/` modules.
 
-We are currently working on a `rust_program_generator` to create a Rust program from an `Emojitape`. The initial approach was to generate a new Cargo project that would then be compiled separately. However, this has led to complexities with string formatting and escaping within the generator, causing repeated compilation errors.
+**Progress Made:**
+- Imports for all emoji modules have been added to `src/interpreter.rs`.
+- `execute_` functions have been implemented for the following tokens:
+    - `Token::Add` (`add_token::execute_add`)
+    - `Token::Sub` (`sub_token::execute_sub`)
+    - `Token::Mul` (`mul_token::execute_mul`)
+    - `Token::DivS` (`div_s_token::execute_div_s`)
+    - `Token::GtS` (`gt_s_token::execute_gt_s`)
+    - `Token::Newline` (`newline_token::execute_newline`)
+    - `Token::Whitespace` (`whitespace_token::execute_whitespace`)
+    - `Token::S` (`s_token::execute_s`)
+    - `Token::K` (`k_token::execute_k`)
+    - `Token::I` (`i_token::execute_i`)
+    - `Token::And` (`and_token::execute_and`)
+    - `Token::Or` (`or_token::execute_or`)
+    - `Token::Not` (`not_token::execute_not`)
+    - `Token::Implies` (`implies_token::execute_implies`)
+    - `Token::Iff` (`iff_token::execute_iff`)
+    - `Token::Equals` (`equals_token::execute_equals`)
+    - `Token::NotEquals` (`not_equals_token::execute_not_equals`)
+    - `Token::Identical` (`identical_token::execute_identical`)
+    - `Token::LocalGet` (`local_get_token::execute_local_get`)
+    - `Token::LocalSet` (`local_set_token::execute_local_set`)
+    - `Token::Call` (`call_token::execute_call`)
+    - `Token::Drop` (`drop_token::execute_drop`)
+    - `Token::True` (`true_token::execute_true`)
+    - `Token::False` (`false_token::execute_false`)
+    - `Token::Sparkle` (`sparkle_token::execute_sparkle`)
+    - `Token::Lightning` (`lightning_token::execute_lightning`)
+    - `Token::Box` (`box_token::execute_box`)
+    - `Token::EmitWatBlock` (`emit_wat_block_token::execute_emit_wat_block`)
+    - `Token::Integer` (`i32_const_token::execute_i32_const`)
+    - `Token::Comment` (`comment_token::execute_comment`)
+    - Unhandled tokens (`unhandled_token::execute_unhandled_token`)
 
-## 2. New Strategic Plan
+**Issues Encountered During Refactoring:**
+- Initial `replace` operations failed due to exact string matching requirements (whitespace, newlines, and duplicate blocks). This highlighted the need for careful verification of `old_string` content.
+- Duplicate `use` statements and `match` arms were present in `src/interpreter.rs`, leading to compilation warnings (`E0252`, `unreachable patterns`). These need to be cleaned up.
+- The `comment_token::execute_comment` function signature was initially incorrect, causing an `E0061` error. This was resolved by adjusting the function's parameters.
+- The `execute_` functions for many tokens were missing and had to be created.
 
-To simplify the process and make incremental progress, we will adopt a more direct approach.
+## New Strategic Focus: Emoji Refactoring and Semantic Network Building
 
-**Phase 1: Direct WASM Generation**
+**Goal:** To systematically build out the functionality of each emoji token and establish a semantic network that defines relationships between them, enhancing the interpreter's capabilities and enabling more sophisticated reasoning.
 
-1.  **Refactor `rust_program_generator.rs`:**
-    *   The generator will no longer create a new Cargo project.
-    *   It will read and parse the `full_generated_emojitape.emojitape` file as before.
-    *   It will extract the `generated_wat_block` string.
-    *   It will use the `wat` crate (which is already a dependency) to directly parse this WAT string into a WASM binary.
-    *   It will save the resulting WASM binary to a file named `module.wasm`.
+**Next Steps (High-Level):**
+11.  **Clean up `src/interpreter.rs`:** Remove duplicate `match` arms and any remaining redundant `use` statements.
+12.  **Address `unused import` warnings:** Ensure all imported modules are actively used or remove unnecessary imports.
+13.  **Implement remaining `execute_` functions:** Systematically go through any tokens that still lack a dedicated `execute_` function and implement their logic in their respective modules.
+14.  **Define Emoji Semantic Relationships:**
+    *   Identify logical and conceptual connections between emojis (e.g., `➕` (Add) is related to `➖` (Sub), `✖️` (Mul), `➗` (DivS)).
+    *   Determine appropriate representation for these relationships (e.g., RDF triples, a custom graph data structure).
+    *   Consider how these relationships can be stored (e.g., in a `.ttl` file, a Rust struct).
+15.  **Integrate Semantic Network:** Explore how the defined semantic network can be leveraged within the `emojitape_interpreter` for:
+    *   Improved error messages (e.g., suggesting related operations).
+    *   Automated code generation or transformation based on semantic understanding.
+    *   Enhanced AI reasoning or interpretation of emojitape programs.
+16.  **Develop SOPs:** Create detailed Standard Operating Procedures for:
+    *   **Emoji Refactoring:** Guiding the implementation of `execute_` functions and ensuring consistency.
+    *   **Semantic Network Building:** Outlining the process for defining, representing, and integrating emoji relationships.
 
-**Phase 2: WASM Execution and Verification**
-
-1.  **Add `wasmtime` Dependency:** Add the `wasmtime` crate to the `emojitape_interpreter/Cargo.toml` to serve as the runtime for the generated WASM.
-2.  **Create a `wasm_runner` Binary:**
-    *   Create a new binary within the existing project named `wasm_runner`.
-    *   This binary will be responsible for loading and executing the `module.wasm` file.
-3.  **Implement Runner Logic:**
-    *   The `wasm_runner` will use `wasmtime` to load `module.wasm`.
-    *   It will inspect the module to find the exported functions (e.g., the functions defined in the `generated_wat_block`).
-    *   It will call these functions and print their results to verify that the generated WASM is correct.
-
-## 3. Expected Outcome
-
-This new plan will allow us to:
-
-*   Immediately verify the correctness of the WAT to WASM compilation.
-*   Avoid the complexities of generating and compiling a separate Rust project.
-*   Have a clear, testable artifact (`module.wasm`).
-*   Incrementally build towards a more complex code generation system in the future.
-
-## 4. Next Steps
-
-1.  Commit the current (non-compiling) state with a "KitKat break" message.
-2.  Begin implementing Phase 1 by refactoring `rust_program_generator.rs`.
+This KitKat break will allow for a structured approach to enhancing the `emojitape_interpreter`'s capabilities beyond basic execution, moving towards a more semantically aware system.

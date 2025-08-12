@@ -53,3 +53,6 @@ pub mod newline_token;
 pub mod i32_const_token;
 pub mod f32_const_token;
 pub mod drop_token;
+pub mod whitespace_token;
+pub mod comment_token;
+pub mod unhandled_token;
