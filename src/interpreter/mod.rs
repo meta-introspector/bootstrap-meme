@@ -24,7 +24,7 @@ use crate::types::token::emojis::local_get_token;
 use crate::types::token::emojis::local_set_token;
 use crate::types::token::emojis::emit_wat_block_token;
 //use crate::types::token::emojis::add_token;
-use crate::types::token::emojis::sub_token;
+//use crate::types::token::emojis::sub_token;
 use crate::types::token::emojis::mul_token;
 use crate::types::token::emojis::div_s_token;
 use crate::types::token::emojis::gt_s_token;
@@ -58,7 +58,7 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
                 token.execute(&mut stack, &mut locals, &mut tokens_iter)?;
             },
             Token::Sub => {
-                sub_token::execute_sub(&mut stack, &mut locals, &mut tokens_iter)?;
+                token.execute(&mut stack, &mut locals, &mut tokens_iter)?;
             },
             Token::Mul => {
                 mul_token::execute_mul(&mut stack, &mut locals, &mut tokens_iter)?;
