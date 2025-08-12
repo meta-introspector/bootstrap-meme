@@ -3,7 +3,7 @@ use emojitape_interpreter::parser::emojitape_parser::parse_emojitape;
 use emojitape_interpreter::generator::{rust_project, main_rs};
 use std::fs;
 use std::io::Read;
-use emojitape_interpreter::tokenizer::tokenize;
+use emojitape_interpreter::tokenizer::tokenize_function::tokenize;
 use std::env;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

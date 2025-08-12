@@ -1,6 +1,6 @@
 use emojitape_interpreter::parser;
 use std::fs;
-use emojitape_interpreter::tokenizer::tokenize;
+use emojitape_interpreter::tokenizer::tokenize_function::tokenize;
 use std::io::Read;
 use std::env;
 use crate::parser::emojitape_parser::parse_emojitape;
