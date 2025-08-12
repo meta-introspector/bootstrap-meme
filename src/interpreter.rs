@@ -1,6 +1,7 @@
 // src/interpreter.rs
 
-use crate::types::emojitape::Emojitape;
+//use crate::types::emojitape::types::Emojitape;
+//use crate::types::emojitape::Emojitape;
 use crate::types::token::Token;
 use crate::types::rule::Rule;
 use std::collections::HashMap;
@@ -56,7 +57,7 @@ use crate::types::token::emojis::i32_const_token;
 use crate::types::token::emojis::whitespace_token;
 use crate::types::token::emojis::comment_token;
 use crate::types::token::emojis::unhandled_token;
-
+use crate::types::emojitape::types::Emojitape;
 pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
     println!("Executing Emojitape...");
 

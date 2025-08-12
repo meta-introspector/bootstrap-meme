@@ -1,4 +1,5 @@
-use super::Emojitape;
+//use super::Emojitape;
+use crate::types::emojitape::types::Emojitape;
 use crate::types::token::Token;
 
 impl Emojitape {
