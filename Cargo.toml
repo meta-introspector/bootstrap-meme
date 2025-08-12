@@ -10,3 +10,7 @@ lazy_static = "1.4" # For static regexes
 [[bin]]
 name = "emojitape_generator"
 path = "src/bin/emojitape_generator.rs"
+
+[[bin]]
+name = "rust_program_generator"
+path = "src/bin/rust_program_generator.rs"

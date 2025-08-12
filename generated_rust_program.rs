@@ -1,0 +1,1 @@
+\nfn main() {\n    println!(\"--- Generated WAT Block ---\");\n    println!(\"📦(funci32.const42i32.const58i32.addreturn)📦(funci32.const10i32.const20i32.mulreturn)📦(funci32.const30i32.const50i32.gt_sreturn)\");\n    println!(\"--- End Generated WAT Block ---\");\n}\n
