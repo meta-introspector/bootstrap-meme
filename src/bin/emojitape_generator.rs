@@ -3,6 +3,7 @@ use std::fs;
 use emojitape_interpreter::tokenizer::tokenize;
 use std::io::Read;
 use std::env;
+use crate::parser::emojitape_parser::parse_emojitape;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();

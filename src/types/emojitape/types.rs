@@ -2,7 +2,7 @@
 //pub use impl_emojitape::*;
 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct Emojitape {
     pub prelude: Vec<crate::types::token::Token>,
     pub wasm_compiler_prelude: Vec<crate::types::token::Token>,

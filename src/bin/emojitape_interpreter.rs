@@ -1,4 +1,5 @@
 // src/bin/emojitape_interpreter.rs
+use crate::parser::emojitape_parser::parse_emojitape;
 use emojitape_interpreter::tokenizer::tokenize;
 use emojitape_interpreter::parser;
 use emojitape_interpreter::interpreter;

@@ -1,4 +1,5 @@
-use emojitape_interpreter::parser;
+//use emojitape_interpreter::parser;
+use emojitape_interpreter::parser::emojitape_parser::parse_emojitape;
 use emojitape_interpreter::generator::{rust_project, main_rs};
 use std::fs;
 use std::io::Read;
