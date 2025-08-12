@@ -1,7 +1,11 @@
 use crate::types::token::Token;
 use crate::types::token::emojis;
 use std::collections::HashMap;
+use lazy_static::lazy_static; // Import lazy_static
 
+lazy_static! {
+    static ref TOKEN_MAP: HashMap<&'static str, Token> = build_token_map();
+}
 
 fn build_token_map() -> HashMap<&'static str, Token> {
     let mut m = HashMap::new();
@@ -80,8 +84,6 @@ fn build_token_map() -> HashMap<&'static str, Token> {
 pub fn tokenize(input: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
     let mut i = 0;
-    let token_map = build_token_map();
-
     while i < input.len() {
         let remaining_slice = &input[i..];
 
@@ -112,27 +114,55 @@ pub fn tokenize(input: &str) -> Vec<Token> {
 
         // 4. Longest Emoji Match
         let mut longest_match_emoji: Option<&'static str> = None;
-        let mut longest_match_token: Option<&Token> = None;
+        let mut longest_match_token_variant: Option<Token> = None; // Store the actual token variant
 
-        for (emoji_str, token_type) in token_map.iter() {
+        for (emoji_str, token_type) in TOKEN_MAP.iter() {
             if remaining_slice.starts_with(emoji_str)
                 && (longest_match_emoji.is_none() || emoji_str.len() > longest_match_emoji.unwrap().len()) {
                     longest_match_emoji = Some(emoji_str);
-                    longest_match_token = Some(token_type);
+                    longest_match_token_variant = Some(token_type.clone()); // Clone the token
                 }
         }
 
         if let Some(emoji_str) = longest_match_emoji {
             i += emoji_str.len();
-            tokens.push(longest_match_token.unwrap().clone());
+            let matched_token = longest_match_token_variant.unwrap();
+
+            match matched_token {
+                Token::I32Const(_) => { // 📏
+                    // Expect an integer immediately after
+                    let (num_token, len) = parse_number_from_slice(&input[i..]);
+                    if let Some(Token::Integer(val)) = num_token {
+                        tokens.push(Token::I32Const(val));
+                        i += len;
+                    } else {
+                        // If no valid integer follows, push I32Const(0) as is
+                        tokens.push(Token::I32Const(0));
+                    }
+                },
+                Token::F32Const(_) => { // 📐
+                    // Expect a float immediately after
+                    let (num_token, len) = parse_number_from_slice(&input[i..]);
+                    if let Some(Token::Float(val)) = num_token {
+                        tokens.push(Token::F32Const(val));
+                        i += len;
+                    } else {
+                        // If no valid float follows, push F32Const(0.0) as is
+                        tokens.push(Token::F32Const(0.0));
+                    }
+                },
+                _ => {
+                    tokens.push(matched_token);
+                }
+            }
             continue;
         }
 
-        // 5. Numbers
-        if remaining_slice.chars().next().unwrap().is_ascii_digit() {
+        // Helper function to parse numbers from a slice
+        fn parse_number_from_slice(s: &str) -> (Option<Token>, usize) {
             let mut current_len = 0;
             let mut has_decimal = false;
-            for ch in remaining_slice.chars() {
+            for ch in s.chars() {
                 if ch.is_ascii_digit() {
                     current_len += ch.len_utf8();
                 } else if ch == '.' && !has_decimal {
@@ -142,19 +172,24 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                     break;
                 }
             }
-            let num_str = &remaining_slice[..current_len];
-            if has_decimal {
-                if let Ok(f) = num_str.parse::<f32>() {
-                    tokens.push(Token::Float(f));
-                } else {
-                    tokens.push(Token::Word(num_str.to_string()));
+            if current_len > 0 {
+                let num_str = &s[..current_len];
+                if has_decimal {
+                    if let Ok(f) = num_str.parse::<f32>() {
+                        return (Some(Token::Float(f)), current_len);
+                    }
+                } else if let Ok(i_val) = num_str.parse::<i32>() {
+                    return (Some(Token::Integer(i_val)), current_len);
                 }
-            } else if let Ok(i_val) = num_str.parse::<i32>() {
-                tokens.push(Token::Integer(i_val));
-            } else {
-                tokens.push(Token::Word(num_str.to_string()));
             }
-            i += current_len;
+            (None, 0)
+        }
+
+        // 5. Numbers (only if not prefixed by Sparkle/Lightning)
+        let (num_token, len) = parse_number_from_slice(remaining_slice);
+        if let Some(token) = num_token {
+            tokens.push(token);
+            i += len;
             continue;
         }
 
@@ -204,11 +239,9 @@ mod tests {
     fn test_tokenize_with_numbers() {
         let input = "📏42 📐3.14";
         let expected = vec![
-            Token::I32Const(0),
-            Token::Integer(42),
+            Token::I32Const(42),
             Token::Whitespace,
-            Token::F32Const(0.0),
-            Token::Float(3.14),
+            Token::F32Const(3.14),
         ];
         assert_eq!(tokenize(input), expected);
     }
@@ -242,13 +275,11 @@ mod tests {
         let expected = vec![
             Token::SpawnToken,
             Token::Whitespace,
-            Token::I32Const(0),
-            Token::Integer(42),
+            Token::I32Const(42),
             Token::Whitespace,
             Token::Add,
             Token::Whitespace,
-            Token::I32Const(0),
-            Token::Integer(58),
+            Token::I32Const(58),
             Token::Whitespace,
             Token::Return,
         ];
