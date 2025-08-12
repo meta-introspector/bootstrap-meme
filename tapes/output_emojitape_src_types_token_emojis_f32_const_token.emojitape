@@ -1,0 +1,1 @@
+Comment("RUST_CODE_BLOCK_UNPARSABLE:use crate::types::token::Token;\n\npub const EMOJI: &str = \"📐\";\npub const ASCII_EQUIVALENT: &str = \"f32.const\";\n\npub fn to_token() -> Token {\n    Token::F32Const(0.0) // Placeholder value, will be replaced by actual value during parsing\n}\n")

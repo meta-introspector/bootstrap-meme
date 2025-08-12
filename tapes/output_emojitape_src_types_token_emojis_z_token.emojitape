@@ -1,0 +1,1 @@
+Comment("RUST_CODE_BLOCK_UNPARSABLE:use crate::types::token::Token;\n\npub const EMOJI: &str = \"Z\";\n\npub fn to_token() -> Token {\n    Token::Z\n}\n")

@@ -1,0 +1,1 @@
+Comment("RUST_CODE_BLOCK_UNPARSABLE:pub mod emojitape;\npub mod rule;\npub mod token;\n\n#[cfg(test)]\nmod tests {\n    use super::token::Token;\n\n    #[test]\n    fn test_unused_variants() {\n        let _ = Token::CheckTrap;\n        let _ = Token::EmitWatBlock;\n        let _ = Token::Other(\"test\".to_string());\n    }\n}")

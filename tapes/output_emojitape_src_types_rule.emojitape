@@ -1,0 +1,1 @@
+Comment("RUST_CODE_BLOCK_UNPARSABLE:use super::token::Token;\n\n#[derive(Debug, PartialEq, Clone)]\npub struct Rule {\n    pub name: Option<String>,\n    pub pattern: Vec<Token>,\n    pub replacement: Vec<Token>,\n}")

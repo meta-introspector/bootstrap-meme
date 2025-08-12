@@ -1,0 +1,1 @@
+Comment("RUST_CODE_BLOCK_UNPARSABLE:use super::Token;\n\n#[test]\nfn test_unused_variants() {\n    let _ = Token::CheckTrap;\n    let _ = Token::EmitWatBlock;\n    let _ = Token::Other(\"test\".to_string());\n}\n")

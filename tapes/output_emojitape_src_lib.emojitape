@@ -1,0 +1,1 @@
+Comment("RUST_CODE_BLOCK_UNPARSABLE:pub mod generator;\npub mod interpreter;\npub mod parser;\npub mod types;\npub mod tokenizer;\npub mod cocci_converter;\npub mod cocci_parser;\npub mod rust_to_emoji;")

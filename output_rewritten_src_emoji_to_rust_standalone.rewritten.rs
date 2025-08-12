@@ -1,4 +1,4 @@
-// src/emoji_to_rust_standalone.rs
+// RUST_CODE_BLOCK_UNPARSABLE:// src/emoji_to_rust_standalone.rs
 
 use crate::rust_to_emoji_workaround::Token;
 
