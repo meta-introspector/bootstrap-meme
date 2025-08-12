@@ -1,5 +1,6 @@
 pub mod emojis;
 pub mod impl_token;
+pub mod executable;
 
 use strum_macros::{EnumString, EnumIter, EnumProperty}; // Added EnumString, EnumIter, EnumProperty
 
