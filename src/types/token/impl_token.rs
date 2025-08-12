@@ -1,11 +1,14 @@
 use super::Token;
 use std::fmt;
+use std::str::FromStr; // Import FromStr
 use crate::types::token::emojis; // Import the emojis module
 use crate::types::token::executable::ExecutableToken; // Import the trait
 use std::collections::HashMap;
 use std::iter::Peekable;
 use std::slice::Iter;
 use crate::types::token::emojis::add_token;
+use strum::IntoEnumIterator; // Import IntoEnumIterator for Token::iter()
+
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -71,6 +74,37 @@ impl fmt::Display for Token {
             Token::Newline => write!(f, "{}", emojis::newline_token::EMOJI),
             Token::Whitespace => write!(f, "{}", emojis::whitespace_token::EMOJI), // Whitespace is a space
         }
+    }
+}
+
+impl FromStr for Token {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Try parsing as a simple enum variant first using strum's iterator
+        for variant in Token::iter() {
+            if variant.to_string() == s {
+                return Ok(variant);
+            }
+        }
+
+        // Try parsing as Integer
+        if let Ok(i) = s.parse::<i32>() {
+            return Ok(Token::Integer(i));
+        }
+
+        // Try parsing as Float
+        if let Ok(f) = s.parse::<f32>() {
+            return Ok(Token::Float(f));
+        }
+
+        // Try parsing as Comment
+        if s.starts_with("💬") {
+            return Ok(Token::Comment(s[4..].to_string())); // Skip "💬" (4 bytes)
+        }
+
+        // If nothing matched, it's an unknown token
+        Err(format!("Unknown token: {}", s))
     }
 }
 

@@ -1,10 +1,11 @@
 pub mod emojis;
 pub mod impl_token;
 pub mod executable;
+pub mod tests; // Added to make tests discoverable
 
-use strum_macros::{EnumString, EnumIter, EnumProperty}; // Added EnumString, EnumIter, EnumProperty
+use strum_macros::{EnumIter, EnumProperty}; // Removed EnumString
 
-#[derive(Debug, PartialEq, Clone, EnumString, EnumIter, EnumProperty)] // Added EnumString, EnumIter, EnumProperty
+#[derive(Debug, PartialEq, Clone, EnumIter, EnumProperty)] // Removed EnumString
 pub enum Token {
     // Prelude
     #[strum(serialize = "✅")]
