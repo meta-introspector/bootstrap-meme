@@ -13,6 +13,7 @@ fn test_render() {
         zos_export_definition: vec![Token::ZosExport],
         zos_export_implementation: vec![Token::ZosReady],
         self_reproducing_footer: vec![Token::Omega],
+        expected_output: None,
     };
 
     let rendered = emojitape.render();

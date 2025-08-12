@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::types::token::Token;
     use crate::tokenizer::tokenize;
+    use crate::parser::parse_emojitape;
 
     #[test]
     fn test_tokenize_empty() {
@@ -147,3 +147,4 @@ mod tests {
         assert_eq!(emojitape.zos_export_implementation, vec![Token::ZosReady]);
         assert_eq!(emojitape.self_reproducing_footer, vec![Token::Omega]);
     }
+}

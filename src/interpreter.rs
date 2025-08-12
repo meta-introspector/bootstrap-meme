@@ -8,29 +8,74 @@ pub fn execute_emojitape(emojitape: &Emojitape) -> Result<(), String> {
 
     let mut actual_output = String::new(); // Buffer for actual output
 
-    // Execute World Tape (simplified for now)
+    // Execute World Tape
     println!("\n--- World Tape Execution ---");
+    let mut stack: Vec<i32> = Vec::new();
     for token in &emojitape.world_tape {
         match token {
-            Token::Integer(i) => actual_output.push_str(&format!("{} ", i)),
-            Token::Float(f) => actual_output.push_str(&format!("{} ", f)),
-            Token::Add => actual_output.push_str("+ "),
-            Token::Sub => actual_output.push_str("- "),
-            Token::Mul => actual_output.push_str("* "),
-            Token::DivS => actual_output.push_str("/ "),
-            Token::GtS => actual_output.push_str("> "),
-            Token::FuncStart => actual_output.push_str("(func "),
-            Token::Return => actual_output.push_str("return)\n"),
-            Token::Sparkle => actual_output.push_str("i32.const "),
-            Token::Lightning => actual_output.push_str("f32.const "),
-            Token::Word(w) => actual_output.push_str(&format!("{} ", w)),
-            Token::Newline => actual_output.push_str("\n"),
-            Token::Whitespace => actual_output.push_str(" "),
-            Token::Comment(_) => actual_output.push_str("// (comment)\n"),
+            Token::Integer(i) => stack.push(*i),
+            Token::Add => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(a + b);
+                } else {
+                    return Err("Not enough operands for Add operation.".to_string());
+                }
+            },
+            Token::Sub => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(a - b);
+                } else {
+                    return Err("Not enough operands for Sub operation.".to_string());
+                }
+            },
+            Token::Mul => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(a * b);
+                } else {
+                    return Err("Not enough operands for Mul operation.".to_string());
+                }
+            },
+            Token::DivS => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    if b == 0 {
+                        return Err("Division by zero.".to_string());
+                    }
+                    stack.push(a / b);
+                } else {
+                    return Err("Not enough operands for DivS operation.".to_string());
+                }
+            },
+            Token::GtS => {
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    stack.push(if a > b { 1 } else { 0 }); // Push 1 for true, 0 for false
+                } else {
+                    return Err("Not enough operands for GtS operation.".to_string());
+                }
+            },
+            Token::Newline => {}, // Ignore newlines in execution
+            Token::Whitespace => {}, // Ignore whitespace in execution
             // Handle other tokens as needed
-            _ => actual_output.push_str(&format!("{:?} ", token)), // For debugging unhandled tokens
+            _ => {
+                return Err(format!("Unhandled token in World Tape: {:?}", token));
+            } // Placeholder for other tokens
         }
     }
+
+    // The final result is the top of the stack
+    if let Some(result) = stack.last() {
+        actual_output = result.to_string();
+    }
+    
     println!("{}", actual_output); // Print the captured output
     println!("\n--- End World Tape Execution ---");
 

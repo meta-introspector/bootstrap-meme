@@ -137,9 +137,7 @@ pub fn parse_emojitape(tokens_vec: Vec<Token>) -> Emojitape {
                         }
                     },
                     "world_tape" => {
-                        if !matches!(token, Token::Newline | Token::Whitespace) {
-                            emojitape.world_tape.push(token.clone())
-                        }
+                        emojitape.world_tape.push(token.clone())
                     },
                     "generated_wat_block" => {
                         if !matches!(token, Token::Newline | Token::Whitespace) {
@@ -167,9 +165,16 @@ pub fn parse_emojitape(tokens_vec: Vec<Token>) -> Emojitape {
                         }
                     },
                     "expected_output" => {
-                        if !matches!(token, Token::Newline | Token::Whitespace) {
-                            expected_output_buffer.push_str(&token.to_string());
-                        }
+                        let s = match token {
+                            Token::Integer(i) => i.to_string(),
+                            Token::Float(f) => f.to_string(),
+                            Token::Word(w) => w.clone(),
+                            Token::Newline => "\n".to_string(),
+                            Token::Whitespace => " ".to_string(),
+                            // Use the default to_string for other tokens, which might be the desired behavior
+                            _ => token.to_string(),
+                        };
+                        expected_output_buffer.push_str(&s);
                     },
                     _ => {},
                 }
