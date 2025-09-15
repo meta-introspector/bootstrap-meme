@@ -49,3 +49,8 @@ The Quine Engine is the Rust-based deterministic finite automaton (DFA) that orc
 The "Quality Evolution" in QEMO is a direct consequence of this architecture. The system evolves by improving the geometric coherence and integrity of its own embedding space.
 
 By deriving rules from the geometry of its own concepts, the system's transformations are not random; they are guided by an emergent, internal logic. The goal of each cycle is to produce a version of itself that is more consistent, more integrated, and more expressive, as measured by the properties of the embedding space. This is a form of deterministic, automated code refactoring and conceptual clarification.
+
+#### 3.1 Metrics
+- Consistency: cross-file symbol alignment score.
+- Integration: graph connectivity/cluster modularity in embedding space.
+- Expressiveness: reduction in minimal description length (MDL) of code/doc pairs.
