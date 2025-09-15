@@ -18,6 +18,11 @@ Each term's multivector encodes several layers of information:
 *   **Vector (Grade-1):** Represents the term's position or relationship to other concepts.
 *   **Bivector (Grade-2):** Represents an oriented plane, encoding relational dynamics and shared context between terms.
 
+#### 2.1.1 Formal Definitions
+
+*   Algebra: use Cl(p,q) over ℝ with signature (p=?, q=?); specify basis and grade ops.
+*   Tokenization: Unicode NFC, case policy, code/markdown block handling, locale.
+*   Univalence: f: Term → Multivector is injective under the above normalization; include collision test suite.
 ### 2.2 The Quine Engine
 
 The Quine Engine is the Rust-based deterministic finite automaton (DFA) that orchestrates the QEMO cycle. It is the active component that performs the translation and evolution. Its process is defined by a strict Standard Operating Procedure (SOP):
