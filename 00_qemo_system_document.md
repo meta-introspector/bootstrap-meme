@@ -14,7 +14,12 @@ This is the heart of the system. Every unique term (a "meme") within the system'
 
 Each term's multivector encodes several layers of information:
 
-*   **Scalar (Grade-0):** A unique, immutable Gödel Number (`G = 2^id * 3^count * 5^p`) that serves as the term's fundamental identity and magnitude.
+*   **Scalar (Grade-0):** Gödel Number `G = 2^id · 3^count · 5^p`
+    Where:
+    - id = stable 128-bit hash of normalized term
+    - count = corpus frequency capped (e.g., 32-bit) with documented smoothing
+    - p = part-of-speech or role index (finite set)
+    Implementation: arbitrary-precision integers to prevent overflow; serialize as prime-factor tuple to avoid loss.
 *   **Vector (Grade-1):** Represents the term's position or relationship to other concepts.
 *   **Bivector (Grade-2):** Represents an oriented plane, encoding relational dynamics and shared context between terms.
 
