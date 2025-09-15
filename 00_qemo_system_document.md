@@ -31,6 +31,12 @@ The Quine Engine is the Rust-based deterministic finite automaton (DFA) that orc
 2.  **Analysis:** It performs a harmonic and n-gram analysis of its own vocabulary.
 3.  **Embedding:** It applies the univalent embedding scheme to translate the analyzed vocabulary into the Clifford Multivector space.
 4.  **Execution (DFA Loop):** The engine analyzes the geometric state of the embedding space to derive a set of deterministic transformation rules. It applies these rules to the in-memory buffers, recalculates the embedding, and repeats this loop until a stable state (a fixed point) is reached.
+
+#### 2.2.2 Convergence & Safety
+- Objective E(state): weighted sum of geometric coherence metrics; must strictly decrease.
+- Termination: stop when ΔE < ε or after K iterations; store visited state hashes to detect cycles.
+- Determinism: no RNG; fixed ordering and tie-breakers; stable float ops (e.g., rational/decimal or fused ops).
+
 5.  **Output:** The engine's final output is a diff report that compares the original on-disk state with the final, stable in-memory state. It **never** modifies its own source files directly.
 
 ## 3.0 The Principle of Quality Evolution
